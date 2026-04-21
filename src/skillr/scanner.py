@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import subprocess
 import warnings
+from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
@@ -24,24 +25,6 @@ def is_git_repo(directory: Path) -> bool:
         return result.returncode == 0
     except (subprocess.TimeoutExpired, FileNotFoundError):
         return False
-
-
-def get_git_tracked_files(directory: Path) -> set[str]:
-    """Return set of git-tracked SKILL.md file paths (relative to directory)."""
-    try:
-        result = subprocess.run(
-            ["git", "ls-files", "--others", "--modified", "**/SKILL.md"],
-            cwd=directory,
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-        if result.returncode != 0:
-            return set()
-        files = {line.strip() for line in result.stdout.splitlines() if line.strip()}
-        return files
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        return set()
 
 
 def get_git_commit_hash(directory: Path) -> str | None:
@@ -113,8 +96,6 @@ def get_skill_file_mtime(skill_md_path: Path) -> str:
     """Return the mtime of a SKILL.md file as an ISO string."""
     try:
         mtime = skill_md_path.stat().st_mtime
-        from datetime import UTC, datetime
-
         return datetime.fromtimestamp(mtime, tz=UTC).isoformat()
     except OSError:
         return ""

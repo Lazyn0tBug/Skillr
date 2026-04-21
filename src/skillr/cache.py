@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import time
 from datetime import UTC, datetime
+
+from pydantic import ValidationError
 
 from .config import ensure_plugin_data_dir
 from .models import IntentCache, IntentCacheEntry, MatchResult
@@ -34,17 +37,19 @@ class IntentCacheStore:
             with open(self._cache_path) as f:
                 data = json.load(f)
             return IntentCache.model_validate(data)
-        except (OSError, json.JSONDecodeError, ValueError):
+        except (OSError, json.JSONDecodeError, ValidationError):
             # Corrupted cache — remove and return empty
             self._remove_cache()
             return IntentCache()
 
     def _save_cache(self, cache: IntentCache) -> None:
-        """Write the cache to disk atomically."""
+        """Write the cache to disk atomically with fsync for durability."""
         # Write to temp file then rename for atomicity
         tmp_path = self._cache_path.with_suffix(".tmp")
         with open(tmp_path, "w") as f:
             json.dump(cache.model_dump(), f, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
         tmp_path.rename(self._cache_path)
 
     def _remove_cache(self) -> None:

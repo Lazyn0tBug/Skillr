@@ -159,11 +159,17 @@ def _get_cache_store() -> IntentCacheStore:
 def route_intent_cached(
     user_task: str,
     skills: list[SkillMeta],
-) -> list[MatchResult]:
+) -> list[MatchResult] | None:
     """Route intent with caching: check cache first, fall back to LLM ranking.
 
-    This function combines:
-      intent extraction → cache check → keyword filter → LLM ranking → cache write
+    Returns:
+        list[MatchResult]: cached match results on cache hit
+        None: on cache miss (caller should invoke LLM ranking)
+
+    The caller can distinguish three cases:
+        - []             → LLM ran but found no matches
+        - None          → cache miss, LLM not yet called
+        - [MatchResult]  → cache hit
     """
     if not skills:
         return []
@@ -183,11 +189,8 @@ def route_intent_cached(
     if cached is not None:
         return cached
 
-    # NOTE: The actual LLM calls for intent extraction and matching happen in SKILL.md.
-    # This function is called after the LLM has produced parsed match_results.
-    # It is used by SKILL.md to pass pre-computed results through the cache pipeline.
-    # Return empty list — SKILL.md should call the full routing flow when no cache hit.
-    return []
+    # Cache miss — return None to signal caller should invoke LLM ranking.
+    return None
 
 
 def cache_match_results(

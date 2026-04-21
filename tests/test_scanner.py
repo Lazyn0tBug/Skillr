@@ -6,7 +6,6 @@ from pathlib import Path
 
 from skillr.scanner import (
     get_git_commit_hash,
-    get_git_tracked_files,
     is_git_repo,
     parse_skill_frontmatter,
     scan_skills_dir,
@@ -61,31 +60,6 @@ class TestGetGitCommitHash:
         mocker.patch("subprocess.run", mock_run_timeout())
         result = get_git_commit_hash(Path("/some/path"))
         assert result is None
-
-
-class TestGetGitTrackedFiles:
-    def test_returns_set_of_files(self, mocker):
-        mocker.patch(
-            "subprocess.run",
-            mock_run_success(stdout="skills/skill1/SKILL.md\nskills/skill2/SKILL.md\n"),
-        )
-        result = get_git_tracked_files(Path("/some/path"))
-        assert result == {"skills/skill1/SKILL.md", "skills/skill2/SKILL.md"}
-
-    def test_returns_empty_set_on_failure(self, mocker):
-        mocker.patch("subprocess.run", mock_run_failure())
-        result = get_git_tracked_files(Path("/some/path"))
-        assert result == set()
-
-    def test_returns_empty_set_on_not_found(self, mocker):
-        mocker.patch("subprocess.run", mock_run_not_found())
-        result = get_git_tracked_files(Path("/some/path"))
-        assert result == set()
-
-    def test_returns_empty_set_on_timeout(self, mocker):
-        mocker.patch("subprocess.run", mock_run_timeout())
-        result = get_git_tracked_files(Path("/some/path"))
-        assert result == set()
 
 
 class TestParseSkillFrontmatter:

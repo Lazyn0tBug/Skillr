@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import warnings
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -168,12 +169,15 @@ def load_index() -> SkillrIndex | None:
     try:
         data = json.loads(index_path.read_text(encoding="utf-8"))
         return SkillrIndex.model_validate(data)
-    except (json.JSONDecodeError, ValidationError):
+    except json.JSONDecodeError:
+        return None
+    except ValidationError as e:
+        warnings.warn(f"Index validation failed: {e}")
         return None
 
 
 def run_indexer() -> tuple[Path, int]:
-    """Run the full indexer: scan skills_dirs, save index, return (index_path, skill_count)."""
-    index = build_index()
+    """Run the indexer: scan skills_dirs with incremental logic, save index, return (index_path, skill_count)."""
+    index = build_incremental_index()
     index_path = save_index(index)
     return index_path, len(index.skills)
