@@ -9,8 +9,12 @@ from .models import IntentSpec, MatchResult, SkillMeta
 
 
 def assemble_command(skill: SkillMeta, intent: str) -> str:
-    """Assemble the executable command for a matched skill (MVP: all /<name> <intent>)."""
-    return f"/{skill.name} {intent}"
+    """Assemble the executable command for a matched skill (MVP: all /<name> <intent>).
+
+    Ensures the command is in the form: /<skill_name> <intent>
+    with no extra whitespace between '/' and the skill name.
+    """
+    return f"/{skill.name.strip()} {intent.strip()}"
 
 
 def select_skill_by_number(
