@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from skilr.matcher import build_matcher_prompt, keyword_filter, parse_matcher_response
-from skilr.models import IntentSpec, SkillMeta
+from skillr.matcher import build_matcher_prompt, keyword_filter, parse_matcher_response
+from skillr.models import IntentSpec, SkillMeta
 
 
 class TestKeywordFilter:

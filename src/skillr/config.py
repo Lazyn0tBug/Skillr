@@ -27,7 +27,7 @@ def _get_plugin_data_dir() -> Path:
     if plugin_data:
         return Path(plugin_data)
     # Fallback for local development
-    return Path.home() / ".claude" / "plugins" / "data" / "skilr"
+    return Path.home() / ".claude" / "plugins" / "data" / "skillr"
 
 
 def get_skills_dirs() -> list[Path]:

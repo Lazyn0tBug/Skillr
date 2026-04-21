@@ -3,7 +3,7 @@ title: "feat: Implement Skillr Skill Routing Framework"
 type: feat
 status: implemented
 date: 2026-04-21
-origin: docs/brainstorms/2026-04-21-skilr-skill-routing-framework-requirements.md
+origin: docs/brainstorms/2026-04-21-skillr-skill-routing-framework-requirements.md
 ---
 
 # Skillr Skill Routing Framework
@@ -20,8 +20,8 @@ Skillr 是一个 Claude Code Plugin，帮助用户在终端里找到最合适的
 
 ## Requirements Trace
 
-- R1. `/SkilrScan` — 扫描 Skills 目录，生成索引
-- R2. `/Skilr <task>` — 意图分析 + 匹配 + 选择，输出候选命令
+- R1. `/SkillrScan` — 扫描 Skills 目录，生成索引
+- R2. `/Skillr <task>` — 意图分析 + 匹配 + 选择，输出候选命令
 - R3. Skills 存储在用户配置目录（`~/.claude/skills` 等）
 - R4. Skills 使用标准 `SKILL.md` 格式
 - R5. 关键词 + LLM 意图分析
@@ -60,7 +60,7 @@ Skillr 是一个 Claude Code Plugin，帮助用户在终端里找到最合适的
 - **LLM 调用机制**：采用 CE 模式 — Markdown Skill 描述工作流，LLM 分析在主会话中完成。SDK 文档明确：sub-agent 不能嵌套（sub-agent 的 tools 中不能包含 Agent），因此不做 sub-agent 派遣
 - **mtime 追踪策略**：git-aware > per-file mtime > per-dir mtime，分级降级。git-aware 用 `git ls-files` 检测变更，适合项目内 skills 目录；per-file 适合独立用户目录
 - **索引存储位置**：使用 `${CLAUDE_PLUGIN_DATA}/index/`（plugin data 目录），避免污染用户工作目录
-- **Python 项目结构**：`src/skilr/` 作为源码根目录，`pyproject.toml` 在插件根目录
+- **Python 项目结构**：`src/skillr/` 作为源码根目录，`pyproject.toml` 在插件根目录
 - **userConfig.skills_dirs 类型**：应为对象 `{description: string, sensitive: boolean}`，不是 string array
 
 ### Deferred to Implementation
@@ -75,13 +75,13 @@ Skillr 是一个 Claude Code Plugin，帮助用户在终端里找到最合适的
 > *This illustrates the intended approach and is directional guidance for review, not implementation specification.*
 
 ```
-用户调用 /Skilr <task>
+用户调用 /Skillr <task>
     │
     ▼
 Skillr SKILL.md 描述工作流
     │  LLM 分析在主会话中完成（SKILL.md 驱动，不派遣 sub-agent）
     ▼
-加载索引（skilr_index.json）
+加载索引（skillr_index.json）
     │  检查 mtime（git-aware / per-file / per-dir 分级），必要时懒重建
     ▼
 关键词过滤 + LLM 意图分析与排序
@@ -98,7 +98,7 @@ Markdown 编号列表输出
 **SkillrScan 流程：**
 
 ```
-用户调用 /SkilrScan
+用户调用 /SkillrScan
     │
     ▼
 遍历 skills_dirs 配置的目录
@@ -108,7 +108,7 @@ Markdown 编号列表输出
     │  解析 YAML frontmatter
     ▼
 生成索引文件
-    │  skilr_index.json (机器可读)
+    │  skillr_index.json (机器可读)
     ▼
 保存到 ${CLAUDE_PLUGIN_DATA}/index/
     │
@@ -128,11 +128,11 @@ Markdown 编号列表输出
 
 **Files:**
 - Create: `pyproject.toml` — uv + ty + ruff 配置
-- Create: `src/skilr/__init__.py` — 包初始化
-- Create: `src/skilr/py.typed` — PEP 561 类型标记
+- Create: `src/skillr/__init__.py` — 包初始化
+- Create: `src/skillr/py.typed` — PEP 561 类型标记
 - Create: `.claude-plugin/plugin.json` — 插件清单，`userConfig.skills_dirs` 声明
-- Create: `skills/skilrscan/SKILL.md` — /SkilrScan 入口（Markdown Skill）
-- Create: `skills/skilr/SKILL.md` — /Skilr 入口（Markdown Skill）
+- Create: `skills/skillrscan/SKILL.md` — /SkillrScan 入口（Markdown Skill）
+- Create: `skills/skillr/SKILL.md` — /Skillr 入口（Markdown Skill）
 
 **Approach:**
 - Skillr 完全作为 Markdown Skill 实现，不自己调 LLM，通过 Task 工具派遣 sub-agent
@@ -154,28 +154,28 @@ Markdown 编号列表输出
 - Error path: 插件加载失败时 Claude Code 报错
 
 **Verification:**
-- `claude --debug` 输出显示 "loading plugin skilr" 且两个 Skill 注册成功
+- `claude --debug` 输出显示 "loading plugin skillr" 且两个 Skill 注册成功
 
 ---
 
 - [x] **Unit 2: Skill Scanner**
 
-**Goal:** 实现 /SkilrScan 的核心逻辑：遍历目录、读取 SKILL.md、生成索引
+**Goal:** 实现 /SkillrScan 的核心逻辑：遍历目录、读取 SKILL.md、生成索引
 
 **Requirements:** R1, R3, R4, R6, R7
 
 **Dependencies:** Unit 1
 
 **Files:**
-- Create: `src/skilr/scanner.py` — 目录扫描和 YAML 解析
-- Create: `src/skilr/indexer.py` — 索引生成逻辑
-- Create: `src/skilr/models.py` — Pydantic 数据模型（SkillMeta, SkilrIndex）
-- Create: `src/skilr/config.py` — 配置读取，skills_dirs 从 userConfig 获取
+- Create: `src/skillr/scanner.py` — 目录扫描和 YAML 解析
+- Create: `src/skillr/indexer.py` — 索引生成逻辑
+- Create: `src/skillr/models.py` — Pydantic 数据模型（SkillMeta, SkillrIndex）
+- Create: `src/skillr/config.py` — 配置读取，skills_dirs 从 userConfig 获取
 
 **Approach:**
 - scanner.py 用 pathlib 遍历配置的目录，对每个子目录检查 SKILL.md 是否存在
 - SKILL.md 解析：读取文件内容，用 `---` 分隔 YAML frontmatter 和正文，frontmatter 解析出 name、description
-- indexer.py 生成 `skilr_index.json`（JSON-only；不生成 SKILR_INDEX.md）
+- indexer.py 生成 `skillr_index.json`（JSON-only；不生成 SKILR_INDEX.md）
 - mtime 懒重建：采用分级策略检测变更
   - **Tier 1 (git-aware)**：若 skills_dir 是 git 仓库，用 `git ls-files --others --modified` 与已存储的 commit hash 对比
   - **Tier 2 (per-file)**：非 git 目录，记录每个 SKILL.md 的 mtime，有文件 mtime 变化则重建
@@ -193,7 +193,7 @@ class SkillMeta(BaseModel):
     file_path: str      # absolute path to the SKILL.md
     # 不需要独立的 triggers 字段 — description 本身包含触发条件语义
 
-class SkilrIndex(BaseModel):
+class SkillrIndex(BaseModel):
     version: str
     generated_at: str
     skills_dirs: list[str]
@@ -216,23 +216,23 @@ class SkilrIndex(BaseModel):
 - Error path: 目录无读取权限
 
 **Verification:**
-- /SkilrScan 输出 "✅ 扫描完成，共发现 N 个 Skills"
-- `skilr_index.json` 可被 JSON 解析且字段完整
+- /SkillrScan 输出 "✅ 扫描完成，共发现 N 个 Skills"
+- `skillr_index.json` 可被 JSON 解析且字段完整
 
 ---
 
 - [x] **Unit 3: Skill Router**
 
-**Goal:** 实现 /Skilr 的核心逻辑：加载索引、意图分析、匹配排序、用户选择、输出命令
+**Goal:** 实现 /Skillr 的核心逻辑：加载索引、意图分析、匹配排序、用户选择、输出命令
 
 **Requirements:** R2, R5, R8, R9, R10, R11, R12
 
 **Dependencies:** Unit 2
 
 **Files:**
-- Create: `src/skilr/router.py` — 主流程：加载索引、调用 intent/matcher 组件
-- Create: `src/skilr/intent.py` — 意图提取 prompt 模板（SKILL.md 主会话驱动 LLM 时使用）
-- Create: `src/skilr/matcher.py` — 关键词过滤 + 排序 prompt 模板（SKILL.md 主会话驱动 LLM 时使用）
+- Create: `src/skillr/router.py` — 主流程：加载索引、调用 intent/matcher 组件
+- Create: `src/skillr/intent.py` — 意图提取 prompt 模板（SKILL.md 主会话驱动 LLM 时使用）
+- Create: `src/skillr/matcher.py` — 关键词过滤 + 排序 prompt 模板（SKILL.md 主会话驱动 LLM 时使用）
 
 **Approach:**
 - Skillr SKILL.md 描述工作流，主会话（SKILL.md 驱动）执行 LLM 分析，不派遣 sub-agent
@@ -332,13 +332,13 @@ def assemble_command(skill: SkillMeta, intent: str) -> str:
 
 **Test scenarios:**
 - Happy path: 用户输入 "我想做一个用户认证系统"，返回匹配的 skill 列表
-- Edge case: 没有任何 skill 匹配（输出 "未找到匹配的 Skills，建议先运行 /SkilrScan"）
+- Edge case: 没有任何 skill 匹配（输出 "未找到匹配的 Skills，建议先运行 /SkillrScan"）
 - Edge case: 用户输入 "1,2" 多选（正常处理）
 - Edge case: 用户输入非法编号（提示重新输入）
-- Error path: 索引文件不存在（提示先运行 /SkilrScan）
+- Error path: 索引文件不存在（提示先运行 /SkillrScan）
 
 **Verification:**
-- /Skilr 返回的 Markdown 列表格式正确
+- /Skillr 返回的 Markdown 列表格式正确
 - 输出的命令字符串可被用户直接复制粘贴执行
 
 ---
@@ -396,7 +396,7 @@ def assemble_command(skill: SkillMeta, intent: str) -> str:
 
 ## Sources & References
 
-- **Origin document:** [docs/brainstorms/2026-04-21-skilr-skill-routing-framework-requirements.md](../brainstorms/2026-04-21-skilr-skill-routing-framework-requirements.md)
+- **Origin document:** [docs/brainstorms/2026-04-21-skillr-skill-routing-framework-requirements.md](../brainstorms/2026-04-21-skillr-skill-routing-framework-requirements.md)
 - **Agent SDK Docs:** `docs/references/agentsdk_overview.md`, `agentsdk_subagent.md`, `agentsdk_skill.md`, `agentsdk_plugin.md`, `agentsdk_slash_command.md`
 - **CE Pattern Reference:** compound-engineering plugin 的 skills/ 结构（Markdown Skill 驱动主会话 LLM）
 - **SDK 文档关键约束**：sub-agent 的 tools 数组中不能包含 Agent（即 sub-agent 不能嵌套派遣）

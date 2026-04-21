@@ -8,8 +8,8 @@ Session tracking for Skillr development.
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Requirements definition | ✅ Complete | `docs/brainstorms/2026-04-21-skilr-skill-routing-framework-requirements.md` |
-| Implementation plan | ✅ Complete | `docs/plans/2026-04-21-001-feat-skilr-implementation-plan.md` |
+| Requirements definition | ✅ Complete | `docs/brainstorms/2026-04-21-skillr-skill-routing-framework-requirements.md` |
+| Implementation plan | ✅ Complete | `docs/plans/2026-04-21-001-feat-skillr-implementation-plan.md` |
 | CHANGELOG.md | ✅ Complete | Initial version |
 | TODO.md | ✅ Complete | Initial version |
 | Session.md | ✅ Complete | This document |
@@ -18,7 +18,7 @@ Session tracking for Skillr development.
 
 | Decision | Rationale |
 |----------|----------|
-| Two independent Skills (`/SkilrScan`, `/Skilr`) instead of sub-commands | Follows compound-engineering pattern; cleaner separation of concerns; fault isolation |
+| Two independent Skills (`/SkillrScan`, `/Skillr`) instead of sub-commands | Follows compound-engineering pattern; cleaner separation of concerns; fault isolation |
 | Skills stored externally, scanned via userConfig | Allows users to use existing Skills without modifying them |
 | SKILL.md as standard skill entry format | Aligns with Claude Code Plugin SDK |
 | Python + uv + ty + ruff + pyproject.toml | Modern Python toolchain, fast iteration |
@@ -48,15 +48,15 @@ Session tracking for Skillr development.
 ### Architecture Confirmed
 
 ```
-skilr/                          # Skillr Plugin root
+skillr/                          # Skillr Plugin root
 ├── .claude-plugin/
 │   └── plugin.json              # userConfig.skills_dirs
 ├── skills/
-│   ├── skilrscan/
-│   │   └── SKILL.md             # /SkilrScan entry
-│   └── skilr/
-│       └── SKILL.md             # /Skilr entry
-├── src/skilr/
+│   ├── skillrscan/
+│   │   └── SKILL.md             # /SkillrScan entry
+│   └── skillr/
+│       └── SKILL.md             # /Skillr entry
+├── src/skillr/
 │   ├── scanner.py               # Directory scanning
 │   ├── indexer.py               # Index generation
 │   ├── models.py                # Data models (Pydantic)
@@ -77,7 +77,7 @@ skilr/                          # Skillr Plugin root
 
 ### Open Questions (No Blocker)
 
-1. **Python project layout details** — Exact directory structure under `src/skilr/` will be finalized during implementation
+1. **Python project layout details** — Exact directory structure under `src/skillr/` will be finalized during implementation
 2. **LLM prompt tuning** — Will iterate based on actual usage
 3. **Vector DB upgrade** — Design when business need is clear
 

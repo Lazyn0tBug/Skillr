@@ -1,28 +1,28 @@
 ---
-name: Skilr
+name: Skillr
 description: "Analyze a natural-language task, find the best-matching Skills, and output an executable command suggestion. Use when you know what you want to do but are unsure which Skill to use, or when you want a refined command suggestion."
 argument-hint: "[your task or goal in natural language]"
 ---
 
-# Skilr — Route Tasks to the Right Skill
+# Skillr — Route Tasks to the Right Skill
 
 Skillr helps you find the right Skill and assemble executable command suggestions. It does **not** execute commands for you — it outputs a command string for you to copy and run.
 
 ## Usage
 
 ```
-/Skilr <your task in natural language>
+/Skillr <your task in natural language>
 ```
 
 Example:
 ```
-/Skilr 我想做一个用户认证系统
-/Skilr我想做一个fastapi项目
+/Skillr 我想做一个用户认证系统
+/Skillr我想做一个fastapi项目
 ```
 
 ## Workflow
 
-1. **Load Index** — Skillr loads `skilr_index.json` from `${CLAUDE_PLUGIN_DATA}/index/`. If the index is stale (detected via tiered mtime), it prompts you to run `/SkilrScan` first.
+1. **Load Index** — Skillr loads `skillr_index.json` from `${CLAUDE_PLUGIN_DATA}/index/`. If the index is stale (detected via tiered mtime), it prompts you to run `/SkillrScan` first.
 
 2. **Intent Analysis** — Using the LLM (main session), Skillr analyzes your task and extracts:
    - `intent`: refined intent description
@@ -61,10 +61,10 @@ All Skills output as `/<name> <intent>` in MVP. Future versions will support:
 
 ## Index Not Found
 
-If `skilr_index.json` does not exist:
+If `skillr_index.json` does not exist:
 
 ```
-❌ 未找到索引文件。请先运行 /SkilrScan 扫描 Skills 目录。
+❌ 未找到索引文件。请先运行 /SkillrScan 扫描 Skills 目录。
 ```
 
 ## No Matches
@@ -75,8 +75,8 @@ If no Skills match your task:
 未找到匹配的 Skills。
 建议：
 1. 确认 Skills 目录配置正确（检查 plugin.json 中的 skills_dirs）
-2. 运行 /SkilrScan 重新扫描
-3. 如果刚添加新 Skill，请先运行 /SkilrScan
+2. 运行 /SkillrScan 重新扫描
+3. 如果刚添加新 Skill，请先运行 /SkillrScan
 ```
 
 ## Edge Cases

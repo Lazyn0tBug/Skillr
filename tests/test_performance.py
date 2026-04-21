@@ -20,9 +20,9 @@ from pathlib import Path
 
 import pytest
 
-from skilr.intent import build_intent_prompt, parse_intent_response
-from skilr.matcher import build_matcher_prompt, keyword_filter, parse_matcher_response
-from skilr.models import IntentSpec, SkillMeta
+from skillr.intent import build_intent_prompt, parse_intent_response
+from skillr.matcher import build_matcher_prompt, keyword_filter, parse_matcher_response
+from skillr.models import IntentSpec, SkillMeta
 
 
 # === Benchmark fixtures ===

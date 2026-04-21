@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from skilr.config import _get_plugin_data_dir, ensure_plugin_data_dir, get_skills_dirs
+from skillr.config import _get_plugin_data_dir, ensure_plugin_data_dir, get_skills_dirs
 
 
 class TestGetPluginDataDir:
@@ -18,7 +18,7 @@ class TestGetPluginDataDir:
     def test_fallback_when_no_env(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.delenv("CLAUDE_PLUGIN_DATA", raising=False)
         result = _get_plugin_data_dir()
-        assert "skilr" in str(result)
+        assert "skillr" in str(result)
 
 
 class TestGetSkillsDirs:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from skilr.intent import build_intent_prompt, parse_intent_response
+from skillr.intent import build_intent_prompt, parse_intent_response
 
 
 class TestBuildIntentPrompt:

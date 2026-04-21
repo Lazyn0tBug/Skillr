@@ -5,7 +5,7 @@ Future work and known issues for Skillr.
 ## In Progress
 
 - [x] Unit 1: Project Foundation — pyproject.toml, plugin.json, SKILL.md files (Markdown Skill pattern)
-- [x] Unit 2: Skill Scanner — scanner.py, indexer.py, models.py (SkillMeta, SkilrIndex with tiered mtime), config.py
+- [x] Unit 2: Skill Scanner — scanner.py, indexer.py, models.py (SkillMeta, SkillrIndex with tiered mtime), config.py
 - [x] Unit 3: Skill Router — router.py, intent.py, matcher.py
 - [x] Unit 4: Output Artifacts — CHANGELOG.md, TODO.md, Session.md
 

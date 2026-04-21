@@ -1,15 +1,15 @@
 ---
-name: SkilrScan
-description: "Scan configured skills_dirs directories and rebuild the Skillr index (skilr_index.json). Run this once after adding or updating Skills, or when index staleness is suspected."
+name: SkillrScan
+description: "Scan configured skills_dirs directories and rebuild the Skillr index (skillr_index.json). Run this once after adding or updating Skills, or when index staleness is suspected."
 ---
 
-# SkilrScan — Scan Skills and Rebuild Index
+# SkillrScan — Scan Skills and Rebuild Index
 
 Skillr helps you find the right Skill and assemble executable command suggestions.
 
 ## Usage
 
-Invoke this Skill to scan your configured Skills directories and rebuild the `skilr_index.json` index.
+Invoke this Skill to scan your configured Skills directories and rebuild the `skillr_index.json` index.
 
 **No arguments required.**
 
@@ -20,7 +20,7 @@ Skillr will:
 2. Expand `~` paths using `pathlib.Path.expanduser()`
 3. Traverse each skills_dir — find subdirectories containing `SKILL.md`
 4. Parse each `SKILL.md` YAML frontmatter to extract `name` and `description`
-5. Generate `skilr_index.json` with Skill metadata and tiered mtime tracking info
+5. Generate `skillr_index.json` with Skill metadata and tiered mtime tracking info
 6. Save the index to `${CLAUDE_PLUGIN_DATA}/index/`
 
 ## Output
@@ -31,7 +31,7 @@ After scanning, Skillr outputs a summary:
 ✅ 扫描完成，共发现 N 个 Skills
   - /path/to/skills_dir1: M 个 Skills
   - /path/to/skills_dir2: K 个 Skills
-索引已保存至: ${CLAUDE_PLUGIN_DATA}/index/skilr_index.json
+索引已保存至: ${CLAUDE_PLUGIN_DATA}/index/skillr_index.json
 ```
 
 ## mtime Tracking Strategy

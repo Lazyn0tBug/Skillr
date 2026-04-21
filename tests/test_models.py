@@ -8,11 +8,11 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from skilr.models import (
+from skillr.models import (
     IntentSpec,
     MatchResult,
     SkillMeta,
-    SkilrIndex,
+    SkillrIndex,
     SourceTracking,
 )
 
@@ -54,7 +54,7 @@ class TestSourceTracking:
             SourceTracking(type="svn", value="abc123")  # type must be "git" or "mtime"
 
 
-class TestSkilrIndex:
+class TestSkillrIndex:
     def test_full_construction(self):
         skills = [
             SkillMeta(name="s1", description="d1", file_path=Path("/s1/SKILL.md")),
@@ -63,7 +63,7 @@ class TestSkilrIndex:
         tracking = {
             "/skills": SourceTracking(type="git", value="hash123"),
         }
-        index = SkilrIndex(
+        index = SkillrIndex(
             version="1.0.0",
             generated_at=datetime.now(timezone.utc).isoformat(),
             skills_dirs=["/skills"],
@@ -76,7 +76,7 @@ class TestSkilrIndex:
         assert index.retrieval_window == 50
 
     def test_defaults(self):
-        index = SkilrIndex(
+        index = SkillrIndex(
             generated_at="2026-01-01T00:00:00Z",
             skills_dirs=[],
             skills=[],

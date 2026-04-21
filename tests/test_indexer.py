@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from skilr.indexer import (
+from skillr.indexer import (
     build_index,
     get_source_tracking_value,
     load_index,
@@ -17,19 +17,19 @@ from skilr.indexer import (
     save_index,
     scan_all_skills_dirs,
 )
-from skilr.models import SkillMeta, SkilrIndex, SourceTracking
+from skillr.models import SkillMeta, SkillrIndex, SourceTracking
 
 
 class TestGetSourceTrackingValue:
     def test_returns_git_tracking(self, mocker):
-        mocker.patch("skilr.indexer.is_git_repo", return_value=True)
-        mocker.patch("skilr.indexer.get_git_commit_hash", return_value="abc123")
+        mocker.patch("skillr.indexer.is_git_repo", return_value=True)
+        mocker.patch("skillr.indexer.get_git_commit_hash", return_value="abc123")
         result = get_source_tracking_value(Path("/git/repo"))
         assert result.type == "git"
         assert result.value == "abc123"
 
     def test_returns_mtime_tracking(self, mocker, tmp_path: Path):
-        mocker.patch("skilr.indexer.is_git_repo", return_value=False)
+        mocker.patch("skillr.indexer.is_git_repo", return_value=False)
         # Create actual directory so stat() works
         skills_dir = tmp_path / "skills"
         skills_dir.mkdir()
@@ -39,7 +39,7 @@ class TestGetSourceTrackingValue:
         datetime.fromisoformat(result.value)
 
     def test_fallback_on_os_error(self, mocker):
-        mocker.patch("skilr.indexer.is_git_repo", return_value=False)
+        mocker.patch("skillr.indexer.is_git_repo", return_value=False)
         mocker.patch("pathlib.Path.stat", side_effect=OSError())
         result = get_source_tracking_value(Path("/nonexistent"))
         assert result.type == "mtime"
@@ -48,7 +48,7 @@ class TestGetSourceTrackingValue:
 
 class TestScanAllSkillsDirs:
     def test_empty_when_no_dirs_configured(self, mocker):
-        mocker.patch("skilr.indexer.get_skills_dirs", return_value=[])
+        mocker.patch("skillr.indexer.get_skills_dirs", return_value=[])
         skills, tracking = scan_all_skills_dirs()
         assert skills == []
         assert tracking == {}
@@ -67,8 +67,8 @@ class TestScanAllSkillsDirs:
             encoding="utf-8",
         )
 
-        mocker.patch("skilr.indexer.get_skills_dirs", return_value=[dir1, dir2])
-        mocker.patch("skilr.indexer.get_source_tracking_value", return_value=SourceTracking(type="mtime", value="0"))
+        mocker.patch("skillr.indexer.get_skills_dirs", return_value=[dir1, dir2])
+        mocker.patch("skillr.indexer.get_source_tracking_value", return_value=SourceTracking(type="mtime", value="0"))
 
         skills, tracking = scan_all_skills_dirs()
         assert len(skills) == 1
@@ -79,13 +79,13 @@ class TestScanAllSkillsDirs:
 
 class TestBuildIndex:
     def test_creates_index_with_version(self, mocker):
-        mocker.patch("skilr.indexer.get_skills_dirs", return_value=[])
+        mocker.patch("skillr.indexer.get_skills_dirs", return_value=[])
         index = build_index()
         assert index.version == "1.0.0"
         assert index.retrieval_window == 50
 
     def test_sets_generated_at(self, mocker):
-        mocker.patch("skilr.indexer.get_skills_dirs", return_value=[])
+        mocker.patch("skillr.indexer.get_skills_dirs", return_value=[])
         index = build_index()
         # Should be a valid ISO timestamp
         datetime.fromisoformat(index.generated_at)
@@ -97,7 +97,7 @@ class TestSaveIndex:
         plugin_data.mkdir()
         monkeypatch.setenv("CLAUDE_PLUGIN_DATA", str(plugin_data))
 
-        index = SkilrIndex(
+        index = SkillrIndex(
             version="1.0.0",
             generated_at=datetime.now(timezone.utc).isoformat(),
             skills_dirs=[],
@@ -106,7 +106,7 @@ class TestSaveIndex:
         )
         path = save_index(index)
         assert path.exists()
-        assert path.name == "skilr_index.json"
+        assert path.name == "skillr_index.json"
 
         # Verify it's valid JSON
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -129,7 +129,7 @@ class TestLoadIndex:
 
         index_dir = plugin_data / "index"
         index_dir.mkdir()
-        index_path = index_dir / "skilr_index.json"
+        index_path = index_dir / "skillr_index.json"
         index_data = {
             "version": "1.0.0",
             "generated_at": "2026-01-01T00:00:00Z",
@@ -154,7 +154,7 @@ class TestLoadIndex:
 
         index_dir = plugin_data / "index"
         index_dir.mkdir()
-        index_path = index_dir / "skilr_index.json"
+        index_path = index_dir / "skillr_index.json"
         index_path.write_text("not valid json", encoding="utf-8")
 
         result = load_index()
@@ -167,7 +167,7 @@ class TestLoadIndex:
 
         index_dir = plugin_data / "index"
         index_dir.mkdir()
-        index_path = index_dir / "skilr_index.json"
+        index_path = index_dir / "skillr_index.json"
         # Missing required 'generated_at' field
         index_path.write_text('{"version": "1.0.0"}', encoding="utf-8")
 
@@ -182,7 +182,7 @@ class TestRunIndexer:
         monkeypatch.setenv("CLAUDE_PLUGIN_DATA", str(plugin_data))
 
         # No skills dirs configured
-        mocker.patch("skilr.indexer.get_skills_dirs", return_value=[])
+        mocker.patch("skillr.indexer.get_skills_dirs", return_value=[])
 
         index_path, count = run_indexer()
         assert index_path.exists()

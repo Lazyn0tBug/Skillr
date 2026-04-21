@@ -1,4 +1,4 @@
-"""Skill indexer — generates and persists the SkilrIndex JSON."""
+"""Skill indexer — generates and persists the SkillrIndex JSON."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from .config import ensure_plugin_data_dir, get_skills_dirs
-from .models import SkillMeta, SkilrIndex, SourceTracking
+from .models import SkillMeta, SkillrIndex, SourceTracking
 from .scanner import (
     get_git_commit_hash,
     get_git_tracked_files,
@@ -54,12 +54,12 @@ def scan_all_skills_dirs() -> tuple[list[SkillMeta], dict[str, SourceTracking]]:
     return all_skills, source_tracking
 
 
-def build_index() -> SkilrIndex:
-    """Build a fresh SkilrIndex from all configured skills_dirs."""
+def build_index() -> SkillrIndex:
+    """Build a fresh SkillrIndex from all configured skills_dirs."""
     skills_dirs = [str(d) for d in get_skills_dirs()]
     skills, source_tracking = scan_all_skills_dirs()
 
-    return SkilrIndex(
+    return SkillrIndex(
         version="1.0.0",
         generated_at=datetime.now(timezone.utc).isoformat(),
         skills_dirs=skills_dirs,
@@ -69,30 +69,30 @@ def build_index() -> SkilrIndex:
     )
 
 
-def save_index(index: SkilrIndex) -> Path:
-    """Save the SkilrIndex to ${CLAUDE_PLUGIN_DATA}/index/skilr_index.json."""
+def save_index(index: SkillrIndex) -> Path:
+    """Save the SkillrIndex to ${CLAUDE_PLUGIN_DATA}/index/skillr_index.json."""
     plugin_data_dir = ensure_plugin_data_dir()
     index_dir = plugin_data_dir / "index"
     index_dir.mkdir(parents=True, exist_ok=True)
 
-    index_path = index_dir / "skilr_index.json"
+    index_path = index_dir / "skillr_index.json"
     index_bytes = index.model_dump_json(indent=2, exclude_none=True).encode("utf-8")
     index_path.write_bytes(index_bytes)
 
     return index_path
 
 
-def load_index() -> SkilrIndex | None:
-    """Load the existing SkilrIndex, or return None if not found."""
+def load_index() -> SkillrIndex | None:
+    """Load the existing SkillrIndex, or return None if not found."""
     plugin_data_dir = ensure_plugin_data_dir()
-    index_path = plugin_data_dir / "index" / "skilr_index.json"
+    index_path = plugin_data_dir / "index" / "skillr_index.json"
 
     if not index_path.exists():
         return None
 
     try:
         data = json.loads(index_path.read_text(encoding="utf-8"))
-        return SkilrIndex.model_validate(data)
+        return SkillrIndex.model_validate(data)
     except (json.JSONDecodeError, ValidationError):
         return None
 

@@ -8,11 +8,11 @@ from pathlib import Path
 
 import pytest
 
-from skilr.indexer import load_index, run_indexer
-from skilr.intent import build_intent_prompt, parse_intent_response
-from skilr.matcher import build_matcher_prompt, keyword_filter, parse_matcher_response
-from skilr.models import IntentSpec, SkillMeta
-from skilr.router import (
+from skillr.indexer import load_index, run_indexer
+from skillr.intent import build_intent_prompt, parse_intent_response
+from skillr.matcher import build_matcher_prompt, keyword_filter, parse_matcher_response
+from skillr.models import IntentSpec, SkillMeta
+from skillr.router import (
     assemble_command,
     format_match_results_for_display,
     index_stale_or_missing,
@@ -43,7 +43,7 @@ class TestScenarioFullIndexBuild:
             )
 
         # Mock get_skills_dirs in the indexer module (where it is imported)
-        mocker.patch("skilr.indexer.get_skills_dirs", return_value=[skills_dir])
+        mocker.patch("skillr.indexer.get_skills_dirs", return_value=[skills_dir])
 
         index_path, count = run_indexer()
         assert index_path.exists()
@@ -199,7 +199,7 @@ class TestScenarioIndexStaleness:
         # Create index file
         index_dir = plugin_data / "index"
         index_dir.mkdir()
-        index_path = index_dir / "skilr_index.json"
+        index_path = index_dir / "skillr_index.json"
         index_data = {
             "version": "1.0.0",
             "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -218,7 +218,7 @@ class TestScenarioMalformedSkills:
     """Scenario 6: Handling malformed SKILL.md files gracefully."""
 
     def test_skips_invalid_skills(self, malformed_skills_dir: Path):
-        from skilr.scanner import scan_skills_dir
+        from skillr.scanner import scan_skills_dir
 
         # Should not raise, should skip bad files
         result = scan_skills_dir(malformed_skills_dir)

@@ -23,7 +23,7 @@ class SourceTracking(BaseModel):
     value: str = Field(description="For 'git': commit hash. For 'mtime': mtime as ISO string")
 
 
-class SkilrIndex(BaseModel):
+class SkillrIndex(BaseModel):
     """The complete Skillr index stored as JSON."""
 
     version: str = Field(default="1.0.0", description="Index schema version")

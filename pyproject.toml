@@ -1,5 +1,5 @@
 [project]
-name = "skilr"
+name = "skillr"
 version = "0.0.9"
 description = "Skill routing framework for Claude Code — find the right Skill and assemble executable command suggestions"
 requires-python = ">=3.11"
@@ -31,4 +31,4 @@ select = ["E", "F", "I", "N", "W", "UP"]
 ignore = ["E501"]
 
 [tool.ty]
-package = "skilr"
+package = "skillr"

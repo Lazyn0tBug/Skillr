@@ -29,7 +29,7 @@ uv sync
 将插件目录链接到 Claude Code 的插件目录：
 
 ```bash
-ln -s /path/to/Skillr ~/.claude/plugins/skilr
+ln -s /path/to/Skillr ~/.claude/plugins/skillr
 ```
 
 或在 Claude Code 中启用本地插件（取决于你的 Claude Code 版本配置）。
@@ -47,10 +47,10 @@ Skillr 需要知道去哪里扫描 Skills。当插件首次加载时，Claude Co
 如果想在本地开发时使用，可以手动创建配置文件：
 
 ```bash
-mkdir -p ~/.claude/plugins/data/skilr
+mkdir -p ~/.claude/plugins/data/skillr
 ```
 
-在 `~/.claude/plugins/data/skilr/config.json` 中创建：
+在 `~/.claude/plugins/data/skillr/config.json` 中创建：
 
 ```json
 {
@@ -98,20 +98,20 @@ This skill generates a production-ready FastAPI project with:
 首次使用或添加新 Skill 后，先运行扫描：
 
 ```
-/SkilrScan
+/SkillrScan
 ```
 
 输出示例：
 ```
 ✅ 扫描完成，共发现 5 个 Skills
   - ~/.claude/skills: 5 个 Skills
-索引已保存至: ${CLAUDE_PLUGIN_DATA}/index/skilr_index.json
+索引已保存至: ${CLAUDE_PLUGIN_DATA}/index/skillr_index.json
 ```
 
 ### 2. 查找并使用 Skill
 
 ```
-/Skilr 我想做一个用户认证系统
+/Skillr 我想做一个用户认证系统
 ```
 
 Skillr 会：
@@ -145,7 +145,7 @@ Skillr 会：
 ## 工作原理
 
 ```
-你: /Skilr 我想做一个 API
+你: /Skillr 我想做一个 API
   │
   ▼
 Skillr SKILL.md 描述工作流
@@ -168,8 +168,8 @@ Skillr SKILL.md 描述工作流
 
 | 阶段 | 操作 | 说明 |
 |------|------|------|
-| `/SkilrScan` | 扫描 → 生成索引 | 遍历 skills_dirs，解析 SKILL.md，保存 JSON |
-| `/Skilr` | 加载索引 → 意图分析 → 匹配排序 → 输出命令 | 全程在主会话完成 |
+| `/SkillrScan` | 扫描 → 生成索引 | 遍历 skills_dirs，解析 SKILL.md，保存 JSON |
+| `/Skillr` | 加载索引 → 意图分析 → 匹配排序 → 输出命令 | 全程在主会话完成 |
 
 ---
 
@@ -198,11 +198,11 @@ description: "描述技能用途，用于 LLM 匹配"
 
 ## 常见问题
 
-**Q: `/Skilr` 提示"未找到索引文件"**
-A: 先运行 `/SkilrScan` 生成索引。如果配置了多个 skills_dirs，确保 config.json 路径正确。
+**Q: `/Skillr` 提示"未找到索引文件"**
+A: 先运行 `/SkillrScan` 生成索引。如果配置了多个 skills_dirs，确保 config.json 路径正确。
 
 **Q: 添加了新 Skill 但搜不到**
-A: 运行 `/SkilrScan` 重新扫描。
+A: 运行 `/SkillrScan` 重新扫描。
 
 **Q: 如何指定多个 skills_dirs？**
 A: 在 `${CLAUDE_PLUGIN_DATA}/config.json` 的 `skills_dirs` 中添加多个路径。

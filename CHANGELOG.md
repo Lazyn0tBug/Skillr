@@ -9,12 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Initial project structure and requirements definition
-- Requirements document: `docs/brainstorms/2026-04-21-skilr-skill-routing-framework-requirements.md`
-- Implementation plan: `docs/plans/2026-04-21-001-feat-skilr-implementation-plan.md`
+- Requirements document: `docs/brainstorms/2026-04-21-skillr-skill-routing-framework-requirements.md`
+- Implementation plan: `docs/plans/2026-04-21-001-feat-skillr-implementation-plan.md`
 - SDK reference: `docs/plugins-reference.md`
 
 ### Technical Decisions
-- Two independent Skills: `/SkilrScan` and `/Skilr` (not sub-commands)
+- Two independent Skills: `/SkillrScan` and `/Skillr` (not sub-commands)
 - Python with uv + ty + ruff + pyproject.toml
 - Index stored at `${CLAUDE_PLUGIN_DATA}/index/`
 - Skill discovery via YAML frontmatter parsing of `SKILL.md`

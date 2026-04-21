@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from skilr.scanner import (
+from skillr.scanner import (
     get_git_commit_hash,
     get_git_tracked_files,
     is_git_repo,

@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from skilr.matcher import MatchResult
-from skilr.models import SkillMeta
-from skilr.router import (
+from skillr.matcher import MatchResult
+from skillr.models import SkillMeta
+from skillr.router import (
     assemble_command,
     format_match_results_for_display,
     index_stale_or_missing,
@@ -129,25 +129,25 @@ class TestFormatMatchResultsForDisplay:
 
 class TestIndexStaleOrMissing:
     def test_delegates_to_load_index(self, mocker):
-        mocker.patch("skilr.router.load_index", return_value=None)
+        mocker.patch("skillr.router.load_index", return_value=None)
         result = index_stale_or_missing()
         assert result is True
 
     def test_returns_false_when_index_exists(self, mocker):
-        mocker.patch("skilr.router.load_index", return_value="something")
+        mocker.patch("skillr.router.load_index", return_value="something")
         result = index_stale_or_missing()
         assert result is False
 
 
 class TestLoadSkillsOrNone:
     def test_returns_none_when_no_index(self, mocker):
-        mocker.patch("skilr.router.load_index", return_value=None)
+        mocker.patch("skillr.router.load_index", return_value=None)
         result = load_skills_or_none()
         assert result is None
 
     def test_returns_skills_list(self, mocker):
         mock_index = mocker.MagicMock()
         mock_index.skills = ["skill1", "skill2"]
-        mocker.patch("skilr.router.load_index", return_value=mock_index)
+        mocker.patch("skillr.router.load_index", return_value=mock_index)
         result = load_skills_or_none()
         assert result == ["skill1", "skill2"]
