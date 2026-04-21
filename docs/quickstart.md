@@ -38,18 +38,26 @@ ln -s /path/to/Skillr ~/.claude/plugins/skilr
 
 ## 配置
 
-Skillr 需要知道去哪里扫描 Skills。编辑 Claude Code 的插件配置（`~/.claude/settings.local.json`）：
+Skillr 需要知道去哪里扫描 Skills。当插件首次加载时，Claude Code 会根据 `plugin.json` 中的 `userConfig` 声明提示你配置 `skills_dirs`。
+
+配置存储在 `${CLAUDE_PLUGIN_DATA}/config.json`（由 Claude Code 自动管理）。
+
+### 本地开发配置
+
+如果想在本地开发时使用，可以手动创建配置文件：
+
+```bash
+mkdir -p ~/.claude/plugins/data/skilr
+```
+
+在 `~/.claude/plugins/data/skilr/config.json` 中创建：
 
 ```json
 {
-  "plugins": {
-    "skilr": {
-      "skills_dirs": [
-        "~/.claude/skills",
-        "~/my-custom-skills"
-      ]
-    }
-  }
+  "skills_dirs": [
+    "~/.claude/skills",
+    "~/my-custom-skills"
+  ]
 }
 ```
 
@@ -97,7 +105,7 @@ This skill generates a production-ready FastAPI project with:
 ```
 ✅ 扫描完成，共发现 5 个 Skills
   - ~/.claude/skills: 5 个 Skills
-索引已保存至: ~/.claude/plugin_data/skilr/index/skilr_index.json
+索引已保存至: ${CLAUDE_PLUGIN_DATA}/index/skilr_index.json
 ```
 
 ### 2. 查找并使用 Skill
@@ -191,13 +199,13 @@ description: "描述技能用途，用于 LLM 匹配"
 ## 常见问题
 
 **Q: `/Skilr` 提示"未找到索引文件"**
-A: 先运行 `/SkilrScan` 生成索引。
+A: 先运行 `/SkilrScan` 生成索引。如果配置了多个 skills_dirs，确保 config.json 路径正确。
 
 **Q: 添加了新 Skill 但搜不到**
 A: 运行 `/SkilrScan` 重新扫描。
 
 **Q: 如何指定多个 skills_dirs？**
-A: 在插件配置的 `skills_dirs` 中添加多个路径。
+A: 在 `${CLAUDE_PLUGIN_DATA}/config.json` 的 `skills_dirs` 中添加多个路径。
 
 ---
 
