@@ -22,7 +22,7 @@ Example:
 
 ## Workflow
 
-1. **Load Index** — skillr loads `skillr_index.json` from `${CLAUDE_PLUGIN_DATA}/index/`. If the index is stale (detected via tiered mtime), it prompts you to run `/skillrscan` first.
+1. **Load Index** — skillr loads `skillr_index.json` from `${CLAUDE_PLUGIN_DATA}/index/`. If the index is stale (detected via tiered mtime), it prompts you to run `/skillscan` first.
 
 2. **Intent Analysis** — Using the LLM (main session), skillr analyzes your task and extracts:
    - `intent`: refined intent description
@@ -88,33 +88,32 @@ Example:
    - If `N` (or `n`, `否`, `取消`): return to current list
    - If anything else: ask again
 
-6. **Command Output** — After confirmation, skillr outputs only the command string(s):
+6. **Command Output** — After confirmation, skillr outputs only the command string(s), with format determined automatically by each skill's type:
 
-   For single selection (e.g., "1"):
+   **For skills with slash command (single selection):**
    ```
    /ce:plan 开发一个带 JWT 的 FastAPI 用户认证系统
    ```
 
-   For multi-selection (e.g., "1,2"):
+   **For skills without slash command (e.g., hermes agent):**
+   ```
+   使用 diagram skill 画一张harness的架构图
+   ```
+
+   **For multi-selection (mixed types):**
    ```
    /ce:plan 开发一个带 JWT 的 FastAPI 用户认证系统
-   /fastapi-gen 开发一个带 JWT 的 FastAPI 用户认证系统
+   使用 hermes skill 做一个用户认证系统
    ```
 
    **IMPORTANT: Output only the command string(s). Do not add any additional text, explanation, or follow-up question. The skillr session ends immediately after the command output.**
-
-## Output Format (MVP)
-
-All Skills output as `/<name> <intent>` in MVP. Future versions will support:
-- `/<name> refine(<intent>)` for skills with subcommand support
-- `我想用 <skill_name> skill <intent>` for skills without slash commands
 
 ## Index Not Found
 
 If `skillr_index.json` does not exist:
 
 ```
-❌ 未找到索引文件。请先运行 /skillrscan 扫描 skills 目录。
+❌ 未找到索引文件。请先运行 /skillscan 扫描 skills 目录。
 ```
 
 ## No Matches
@@ -125,8 +124,8 @@ If no Skills match your task:
 未找到匹配的 skills。
 建议：
 1. 确认 skills 目录配置正确（检查 plugin.json 中的 skills_dirs）
-2. 运行 /skillrscan 重新扫描
-3. 如果刚添加新 skill，请先运行 /skillrscan
+2. 运行 /skillscan 重新扫描
+3. 如果刚添加新 skill，请先运行 /skillscan
 ```
 
 ## Edge Cases
