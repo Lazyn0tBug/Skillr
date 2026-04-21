@@ -108,8 +108,7 @@ def scan_skills_dir(skills_dir: Path) -> tuple[list[SkillMeta], dict[str, str]]:
         skills: list of SkillMeta for discovered skills
         file_mtimes: dict of skill_name -> mtime ISO string (for incremental index)
 
-    Walks immediate subdirectories looking for SKILL.md files.
-    Skips subdirectories without SKILL.md.
+    Uses `fd` for single-pass glob when available, falling back to iterdir().
     """
     skills: list[SkillMeta] = []
     file_mtimes: dict[str, str] = {}
@@ -118,15 +117,56 @@ def scan_skills_dir(skills_dir: Path) -> tuple[list[SkillMeta], dict[str, str]]:
         warnings.warn(f"skills_dir is not a directory: {skills_dir}")
         return skills, file_mtimes
 
-    for entry in sorted(skills_dir.iterdir()):
-        if not entry.is_dir():
-            continue
-        skill_md = entry / "SKILL.md"
-        if not skill_md.exists():
-            continue
+    skill_md_paths = _fast_skill_md_glob(skills_dir)
+    if skill_md_paths is None:
+        # fd not available — fall back to iterdir() approach
+        skill_md_paths = _iterdir_skill_md_glob(skills_dir)
+
+    for skill_md in skill_md_paths:
         skill = parse_skill_frontmatter(skill_md)
         if skill is not None:
             skills.append(skill)
             file_mtimes[skill.name] = get_skill_file_mtime(skill_md)
 
     return skills, file_mtimes
+
+
+def _fast_skill_md_glob(skills_dir: Path) -> list[Path] | None:
+    """Glob SKILL.md files using fd (one syscall batch), or None if unavailable.
+
+    Uses regex pattern 'SKILL\\.md$' to match only SKILL.md files (not all .md).
+    """
+    try:
+        result = subprocess.run(
+            ["fd", "--type", "f", r"SKILL\.md$", str(skills_dir)],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if result.returncode != 0:
+            return None
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        # fd not installed
+        return None
+
+    paths: list[Path] = []
+    for line in result.stdout.rstrip("\n").split("\n"):
+        if not line:
+            continue
+        # fd returns absolute paths when given an absolute skills_dir
+        paths.append(Path(line))
+
+    # fd returns sorted by default (same as sorted(iterdir()))
+    return paths
+
+
+def _iterdir_skill_md_glob(skills_dir: Path) -> list[Path]:
+    """Fallback glob using Python iterdir() — used when fd is unavailable."""
+    paths: list[Path] = []
+    for entry in sorted(skills_dir.iterdir()):
+        if not entry.is_dir():
+            continue
+        skill_md = entry / "SKILL.md"
+        if skill_md.exists():
+            paths.append(skill_md)
+    return paths
