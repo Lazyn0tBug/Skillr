@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `format_match_results_for_display()` now differentiates cold start (empty skills) from generic no-match
 
+### Added (E1)
+- `IntentCacheEntry` and `IntentCache` Pydantic models in models.py
+- `IntentCacheStore` class in cache.py — disk-persistent TTL cache at `${CLAUDE_PLUGIN_DATA}/cache/intent_cache.json`
+- `route_intent_cached()` and `cache_match_results()` functions in router.py for cache-aware routing
+- `tests/test_cache.py` with 11 tests covering cache hit/miss, TTL expiry, invalidation, and persistence
+
 ## [0.1.2] - 2026-04-21
 
 ### Added

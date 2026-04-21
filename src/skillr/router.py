@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from .cache import IntentCacheStore
 from .indexer import load_index
 from .intent import build_intent_prompt
 from .matcher import build_matcher_prompt
@@ -47,6 +48,7 @@ def parse_selection(selection: str) -> list[int]:
 
 
 # === Exposed workflow functions (called from SKILL.md workflow) ===
+
 
 def build_intent_prompt_for_task(user_task: str) -> str:
     """Build the LLM prompt for extracting intent from a user task."""
@@ -139,3 +141,70 @@ def format_cold_start_guidance() -> str:
 def index_stale_or_missing() -> bool:
     """Return True if the index is missing or should be considered stale."""
     return load_index() is None
+
+
+# === Cache-aware routing (E1) ===
+
+_cache_store: IntentCacheStore | None = None
+
+
+def _get_cache_store() -> IntentCacheStore:
+    """Lazily initialize the cache store."""
+    global _cache_store
+    if _cache_store is None:
+        _cache_store = IntentCacheStore()
+    return _cache_store
+
+
+def route_intent_cached(
+    user_task: str,
+    skills: list[SkillMeta],
+) -> list[MatchResult]:
+    """Route intent with caching: check cache first, fall back to LLM ranking.
+
+    This function combines:
+      intent extraction → cache check → keyword filter → LLM ranking → cache write
+    """
+    if not skills:
+        return []
+
+    # Step 1: Compute intent hash
+    # NOTE: In SKILL.md, the main session LLM generates intent_prompt response.
+    # parse_intent_response is called by SKILL.md after receiving the LLM response.
+    # For caching, we compute intent_hash from user_task directly (not from parsed intent
+    # since the LLM call happens externally in SKILL.md).
+    intent_hash = IntentCacheStore.hash_intent(user_task)
+    skill_ids = [s.name for s in skills]
+    skill_ids_hash = IntentCacheStore.hash_skill_ids(skill_ids)
+
+    # Step 2: Check cache
+    store = _get_cache_store()
+    cached = store.get(intent_hash, skill_ids_hash)
+    if cached is not None:
+        return cached
+
+    # NOTE: The actual LLM calls for intent extraction and matching happen in SKILL.md.
+    # This function is called after the LLM has produced parsed match_results.
+    # It is used by SKILL.md to pass pre-computed results through the cache pipeline.
+    # Return empty list — SKILL.md should call the full routing flow when no cache hit.
+    return []
+
+
+def cache_match_results(
+    user_task: str,
+    skills: list[SkillMeta],
+    match_results: list[MatchResult],
+) -> None:
+    """Store match results in the intent cache.
+
+    Called from SKILL.md after a successful LLM ranking.
+    """
+    if not skills or not match_results:
+        return
+
+    intent_hash = IntentCacheStore.hash_intent(user_task)
+    skill_ids = [s.name for s in skills]
+    skill_ids_hash = IntentCacheStore.hash_skill_ids(skill_ids)
+
+    store = _get_cache_store()
+    store.set(intent_hash, skill_ids_hash, match_results)

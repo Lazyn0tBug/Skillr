@@ -11,8 +11,12 @@ from pydantic import BaseModel, Field
 class SkillMeta(BaseModel):
     """Metadata for a single Skill, parsed from SKILL.md frontmatter."""
 
-    name: str = Field(description="Skill name from SKILL.md frontmatter 'name' field (slash command = /<name>)")
-    description: str = Field(description="Skill description from SKILL.md frontmatter (used for LLM matching)")
+    name: str = Field(
+        description="Skill name from SKILL.md frontmatter 'name' field (slash command = /<name>)"
+    )
+    description: str = Field(
+        description="Skill description from SKILL.md frontmatter (used for LLM matching)"
+    )
     file_path: Path = Field(description="Absolute path to the SKILL.md file")
     has_slash_command: bool = Field(
         default=True,
@@ -60,3 +64,27 @@ class MatchResult(BaseModel):
     name: str = Field(description="Skill name")
     score: float = Field(ge=0.0, le=1.0, description="Relevance score 0.0-1.0")
     match_reason: str = Field(description="Why this skill matches the user's intent (1 sentence)")
+
+
+class IntentCacheEntry(BaseModel):
+    """A cached intent matching result entry."""
+
+    intent_hash: str = Field(description="SHA256 hash of the intent text")
+    skill_ids_hash: str = Field(
+        description="SHA256 hash of sorted skill IDs (changes when skills change)"
+    )
+    match_results: list[MatchResult] = Field(
+        default_factory=list, description="Cached match results"
+    )
+    created_at: str = Field(description="ISO timestamp when entry was created")
+    ttl_seconds: int = Field(default=3600, description="Time-to-live in seconds")
+
+
+class IntentCache(BaseModel):
+    """Disk-persistent cache of intent matching results."""
+
+    version: str = Field(default="1.0.0", description="Cache schema version")
+    entries: dict[str, IntentCacheEntry] = Field(
+        default_factory=dict,
+        description="Cache entries keyed by intent_hash",
+    )
