@@ -18,8 +18,8 @@ from .scanner import (
 )
 
 
-def get_source_tracking_value(skills_dir: Path) -> dict[str, str]:
-    """Return the tracking dict for a skills_dir.
+def get_source_tracking_value(skills_dir: Path) -> SourceTracking:
+    """Return the tracking value for a skills_dir.
 
     Tier 1: git-aware (if directory is a git repo)
     Tier 2: per-file mtime (if not git)
@@ -27,25 +27,24 @@ def get_source_tracking_value(skills_dir: Path) -> dict[str, str]:
     if is_git_repo(skills_dir):
         commit_hash = get_git_commit_hash(skills_dir)
         if commit_hash:
-            return {"type": "git", "value": commit_hash}
+            return SourceTracking(type="git", value=commit_hash)
     try:
         mtime = skills_dir.stat().st_mtime
-        from datetime import datetime, timezone
-        return {"type": "mtime", "value": datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()}
+        return SourceTracking(type="mtime", value=datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat())
     except OSError:
-        return {"type": "mtime", "value": "0"}
+        return SourceTracking(type="mtime", value="0")
 
 
-def scan_all_skills_dirs() -> tuple[list[SkillMeta], dict[str, dict]]:
+def scan_all_skills_dirs() -> tuple[list[SkillMeta], dict[str, SourceTracking]]:
     """Scan all configured skills_dirs and return skills + source_tracking map.
 
     Returns:
         skills: flat list of all discovered SkillMeta
-        source_tracking: dict[dir_path_str, tracking_dict]
+        source_tracking: dict[dir_path_str, SourceTracking]
     """
     skills_dirs = get_skills_dirs()
     all_skills: list[SkillMeta] = []
-    source_tracking: dict[str, dict] = {}
+    source_tracking: dict[str, SourceTracking] = {}
 
     for skills_dir in skills_dirs:
         dir_skills = scan_skills_dir(skills_dir)

@@ -30,8 +30,8 @@ class SkilrIndex(BaseModel):
     generated_at: str = Field(description="ISO timestamp when index was generated")
     skills_dirs: list[str] = Field(description="List of scanned skills_dir paths")
     skills: list[SkillMeta] = Field(default_factory=list, description="All discovered Skills")
-    # dir_path -> {"type": "git"|"mtime", "value": str}
-    source_tracking: dict[str, dict] = Field(
+    # dir_path -> SourceTracking instance (deserialized from {"type": ..., "value": ...})
+    source_tracking: dict[str, SourceTracking] = Field(
         default_factory=dict,
         description="Per-directory tracking info: type and value (git hash or mtime ISO string)",
     )
