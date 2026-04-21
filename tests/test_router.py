@@ -233,3 +233,29 @@ class TestLoadSkillsOrNone:
         mocker.patch("skillr.router.load_index", return_value=mock_index)
         result = load_skills_or_none()
         assert result == ["skill1", "skill2"]
+
+    def test_returns_empty_list_when_index_empty(self, mocker):
+        """Index exists but has 0 skills → empty list (not None)."""
+        mock_index = mocker.MagicMock()
+        mock_index.skills = []
+        mocker.patch("skillr.router.load_index", return_value=mock_index)
+        result = load_skills_or_none()
+        assert result == []
+
+
+class TestColdStartGuidance:
+    def test_cold_start_guidance_contains_skill_instructions(self):
+        """Cold start guidance shows skill setup instructions."""
+        from skillr.router import format_cold_start_guidance
+        result = format_cold_start_guidance()
+        assert "未找到匹配的 Skills" in result
+        assert "~/.claude/skills/" in result
+        assert "/skillscan" in result
+
+    def test_empty_skills_shows_cold_start_guidance(self):
+        """Empty skills_map with empty results shows cold start, not generic no-match."""
+        from skillr.router import format_match_results_for_display
+        result = format_match_results_for_display([], {})
+        assert "未找到匹配的 Skills" in result
+        assert "还没有配置任何 Skills" in result
+        assert "SKILL.md" in result

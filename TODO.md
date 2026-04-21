@@ -11,6 +11,7 @@ Future work and known issues for Skillr.
 - [x] Full test suite — 156 tests: unit, integration, scenario, performance
 - [x] Pagination selection — 4 results/batch, max 3 batches, Y/N confirmation
 - [x] Slash/non-slash auto-routing — `has_slash_command` field, dual output format
+- [x] **E0: Cold start guidance** — 0 skills users see setup instructions
 
 ## Known Issues
 
@@ -19,15 +20,21 @@ Future work and known issues for Skillr.
 - [ ] mtime tiered strategy: verify git-aware detection works for project skills_dirs; confirm per-file mtime catches all stale-index scenarios on target OSes
 - [ ] retrieval_window default value (50) needs field testing
 
+## Enhancement Roadmap (E1-E5)
+
+- [ ] **E1: Result cache** — disk-persistent intent cache with TTL
+- [ ] **E2: Incremental index** — per-file mtime tracking, delta scan
+- [ ] **E3: Vector matching** — Chroma + bge-small-zh embedding
+- [ ] **E4: Rust scanner** — Rust CLI subprocess for file/YAML scanning
+- [ ] **E5: Selection history** — JSONL-based selection tracking (Phase 1 infrastructure)
+
 ## Future Enhancements
 
-- [ ] Vector database integration for semantic skill matching
 - [ ] Background index refresh via cron/heartbeat
 - [ ] Skill auto-discovery from remote registry
 - [ ] TUI interactive selection interface
 - [ ] Dependency graph / parallel execution for multi-skill plans
 - [ ] DAG state machine for execution plans
-- [ ] Rust implementation for performance-critical paths (scanner speedup)
 - [ ] **SKILR_INDEX.md generation: Markdown-format human-readable index**
 - [ ] **CLAUDE_PLUGIN_DATA env var verification**: confirm Claude Code Plugin SDK behavior
 

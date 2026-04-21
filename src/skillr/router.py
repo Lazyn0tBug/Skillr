@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from .indexer import load_index
-from .intent import build_intent_prompt, parse_intent_response
-from .matcher import build_matcher_prompt, keyword_filter, parse_matcher_response
+from .intent import build_intent_prompt
+from .matcher import build_matcher_prompt
 from .models import IntentSpec, MatchResult, SkillMeta
 
 
@@ -85,6 +85,8 @@ def format_match_results_for_display(
         batch_size: Number of results per batch (default 4)
     """
     if not match_results:
+        if not skills_map:
+            return format_cold_start_guidance()
         return "未找到匹配的 Skills。"
 
     total = len(match_results)
@@ -119,6 +121,19 @@ def format_match_results_for_display(
     lines.append("请输入编号选择：")
 
     return "\n".join(lines)
+
+
+def format_cold_start_guidance() -> str:
+    """Return guidance for users who have no skills configured."""
+    return """未找到匹配的 Skills。
+
+看起来你还没有配置任何 Skills。要开始使用 Skillr：
+
+1. 在 ~/.claude/skills/ 目录下创建你的第一个 Skill
+2. 每个 Skill 需要一个 SKILL.md 文件（包含 name 和 description）
+3. 运行 /skillscan 扫描后重新使用 /skillr
+
+查看文档：https://docs.claude.com/skills"""
 
 
 def index_stale_or_missing() -> bool:

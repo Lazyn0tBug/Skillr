@@ -116,9 +116,13 @@ If `skillr_index.json` does not exist:
 ❌ 未找到索引文件。请先运行 /skillscan 扫描 skills 目录。
 ```
 
+## Cold Start (0 Skills Configured)
+
+If the skill list is empty (0 skills), `format_cold_start_guidance()` returns guidance automatically. Do not show the "No Matches" suggestion — the user has no skills to match.
+
 ## No Matches
 
-If no Skills match your task:
+If Skills are configured but none match your task:
 
 ```
 未找到匹配的 skills。
