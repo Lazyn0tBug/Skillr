@@ -177,7 +177,23 @@ def load_index() -> SkillrIndex | None:
 
 
 def run_indexer() -> tuple[Path, int]:
-    """Run the indexer: scan skills_dirs with incremental logic, save index, return (index_path, skill_count)."""
+    """Run the indexer: scan skills_dirs with incremental logic, save index, rebuild vector store, return (index_path, skill_count)."""
     index = build_incremental_index()
     index_path = save_index(index)
+
+    # Rebuild vector store from fresh scan results
+    # NOTE: build_incremental_index() already produces the authoritative skill list;
+    # when skills are reused from prev_index (no changes), the existing vector
+    # store is still valid — rebuild_from_skills clears first so deleted skills
+    # don't linger.
+    from .vectors import EmbeddingStore
+
+    try:
+        store = EmbeddingStore()
+        if store.available:
+            store.rebuild_from_skills(index.skills)
+    except Exception:
+        # Vector store is best-effort — don't fail the indexer
+        pass
+
     return index_path, len(index.skills)

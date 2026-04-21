@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from .cache import IntentCacheStore
 from .indexer import load_index
 from .intent import build_intent_prompt
 from .matcher import build_matcher_prompt
 from .models import IntentSpec, MatchResult, SkillMeta
+
+if TYPE_CHECKING:
+    from .vectors import EmbeddingStore
 
 
 def assemble_command(skill: SkillMeta, intent: str) -> str:
@@ -62,6 +67,74 @@ def build_matcher_prompt_for_intent(
 ) -> str:
     """Build the LLM prompt for filtering and ranking skills against an intent."""
     return build_matcher_prompt(skills, intent, top_k)
+
+
+# === Vector-aware filtering (E3) ===
+
+_vector_store: EmbeddingStore | None = None
+
+
+def _get_vector_store() -> EmbeddingStore | None:
+    """Lazily initialize the vector store."""
+    global _vector_store
+    if _vector_store is None:
+        from .vectors import EmbeddingStore
+
+        try:
+            _vector_store = EmbeddingStore()
+        except Exception:
+            _vector_store = None
+    return _vector_store
+
+
+def filter_by_intent_vector(
+    intent_text: str,
+    skills: list[SkillMeta],
+    top_k: int = 20,
+) -> list[SkillMeta]:
+    """Filter skills by semantic similarity to intent_text using vector search.
+
+    Uses ChromaDB + bge-small-zh ONNX embeddings when available.
+    Falls back to returning the full skills list when vector search is unavailable.
+
+    Args:
+        intent_text: The user's refined intent text
+        skills: All available skills
+        top_k: Number of top candidates to return (default 20)
+
+    Returns:
+        Top-k skills ordered by vector similarity, or full skills list if unavailable
+    """
+    store = _get_vector_store()
+    if store is None or not store.available:
+        return skills
+
+    # Build skill lookup for O(1) access
+    skills_map: dict[str, SkillMeta] = {s.name: s for s in skills}
+    if not skills_map:
+        return skills
+
+    try:
+        results = store.search(intent_text, top_k=top_k)
+    except Exception:
+        # Vector search failed — fall back to full list
+        return skills
+
+    # Return only top-k candidates ordered by vector similarity
+    ranked: list[SkillMeta] = []
+    for name, score in results:
+        if name in skills_map:
+            ranked.append(skills_map[name])
+
+    # If vector search returned fewer than top_k, fill with remaining skills in original order
+    if len(ranked) < top_k:
+        for s in skills:
+            if s.name not in {r.name for r in ranked}:
+                ranked.append(s)
+                if len(ranked) >= top_k:
+                    break
+
+    return ranked
 
 
 def load_skills_or_none() -> list[SkillMeta] | None:
