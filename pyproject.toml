@@ -1,6 +1,6 @@
 [project]
 name = "skilr"
-version = "0.0.1"
+version = "0.0.9"
 description = "Skill routing framework for Claude Code — find the right Skill and assemble executable command suggestions"
 requires-python = ">=3.11"
 dependencies = [
@@ -10,6 +10,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "ty>=0.0.1a8",
     "ruff>=0.4.0",
     "pytest>=8.0",
     "pytest-cov>=4.0",
