@@ -1,0 +1,14 @@
+{
+  "name": "skillr-local",
+  "owner": {
+    "name": "gpdi"
+  },
+  "plugins": [
+    {
+      "name": "skillr",
+      "source": "./",
+      "description": "Skill routing framework — find the right Skill and assemble executable command suggestions.",
+      "version": "0.0.9"
+    }
+  ]
+}

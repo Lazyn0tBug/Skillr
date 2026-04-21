@@ -9,12 +9,18 @@ from .models import IntentSpec, MatchResult, SkillMeta
 
 
 def assemble_command(skill: SkillMeta, intent: str) -> str:
-    """Assemble the executable command for a matched skill (MVP: all /<name> <intent>).
+    """Assemble the executable command for a matched skill.
 
-    Ensures the command is in the form: /<skill_name> <intent>
-    with no extra whitespace between '/' and the skill name.
+    Format depends on whether the skill has a registered slash command:
+    - With slash command: /<name> <intent>
+    - Without slash command: 使用 <name> skill <intent>
     """
-    return f"/{skill.name.strip()} {intent.strip()}"
+    name = skill.name.strip()
+    intent_text = intent.strip()
+    if skill.has_slash_command:
+        return f"/{name} {intent_text}"
+    else:
+        return f"使用 {name} skill {intent_text}"
 
 
 def select_skill_by_number(
@@ -67,20 +73,50 @@ def load_skills_or_none() -> list[SkillMeta] | None:
 def format_match_results_for_display(
     match_results: list[MatchResult],
     skills_map: dict[str, SkillMeta],
+    batch_num: int = 1,
+    batch_size: int = 4,
 ) -> str:
-    """Format match results as a Markdown numbered list for user selection."""
+    """Format match results as a Markdown numbered list for user selection with pagination.
+
+    Args:
+        match_results: All matched results from LLM ranking
+        skills_map: Map of skill name to SkillMeta for looking up skill details
+        batch_num: Current batch number (1, 2, or 3), affects numbering and pagination prompt
+        batch_size: Number of results per batch (default 4)
+    """
     if not match_results:
         return "未找到匹配的 Skills。"
 
-    n = len(match_results)
-    lines = [f"找到 {n} 个匹配的 Skills：", ""]
-    for i, result in enumerate(match_results, 1):
+    total = len(match_results)
+    total_batches = min(3, (total + batch_size - 1) // batch_size)
+
+    # Calculate which slice of results to show for this batch
+    start_idx = (batch_num - 1) * batch_size
+    end_idx = min(start_idx + batch_size, total)
+    batch_results = match_results[start_idx:end_idx]
+
+    if batch_num == 1:
+        lines = [f"找到 {min(batch_size, total)} 个匹配的 Skills：", ""]
+    else:
+        remaining = total - start_idx
+        lines = [f"还有 {remaining} 个匹配的 Skills：", ""]
+
+    # Number consecutively across all batches
+    for i, result in enumerate(batch_results, start=start_idx + 1):
         skill = skills_map.get(result.name)
         skill_name = skill.name if skill else result.name
         lines.append(f"{i}. `/{skill_name}` — 理由: {result.match_reason}")
 
     lines.append("")
-    lines.append("请输入编号选择（支持多选，用逗号分隔，如 1,2）：")
+
+    # Pagination prompt based on batch
+    if batch_num < total_batches:
+        lines.append("n. 换下一批")
+    else:
+        lines.append("n. 没有了（放弃，会话结束）")
+
+    lines.append("")
+    lines.append("请输入编号选择：")
 
     return "\n".join(lines)
 

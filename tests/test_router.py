@@ -29,6 +29,22 @@ class TestAssembleCommand:
         result = assemble_command(skill, "some task")
         assert result == "/skill-scan some task"
 
+    def test_non_slash_command_format(self):
+        """Skills without slash command use '使用 <name> skill' format."""
+        skill = SkillMeta(
+            name="hermes",
+            description="Hermes agent",
+            file_path=Path("/p"),
+            has_slash_command=False,
+        )
+        result = assemble_command(skill, "画一张架构图")
+        assert result == "使用 hermes skill 画一张架构图"
+
+    def test_name_whitespace_stripped(self):
+        skill = SkillMeta(name=" skill ", description="desc", file_path=Path("/p"))
+        result = assemble_command(skill, "some task")
+        assert result == "/skill some task"
+
 
 class TestParseSelection:
     def test_single_number(self):
@@ -111,7 +127,7 @@ class TestFormatMatchResultsForDisplay:
         assert "找到 2 个匹配的 Skills" in output
         assert "/skill1" in output
         assert "/skill2" in output
-        assert " Matches well" in output
+        assert "Matches well" in output
         assert "Also good" in output
 
     def test_shows_reason(self):
@@ -125,6 +141,72 @@ class TestFormatMatchResultsForDisplay:
         skills_map = {"skill1": SkillMeta(name="skill1", description="desc", file_path=Path("/p"))}
         output = format_match_results_for_display(results, skills_map)
         assert "请输入编号选择" in output
+
+
+class TestFormatMatchResultsPagination:
+    """Test batch pagination in format_match_results_for_display."""
+
+    def _make_results(self, count: int) -> list[MatchResult]:
+        return [MatchResult(name=f"skill{i}", score=0.9, match_reason=f"Reason {i}") for i in range(1, count + 1)]
+
+    def _make_map(self, count: int) -> dict[str, SkillMeta]:
+        return {f"skill{i}": SkillMeta(name=f"skill{i}", description="desc", file_path=Path(f"/p{i}")) for i in range(1, count + 1)}
+
+    def test_batch1_shows_pagination_next(self):
+        """Batch 1 with more results shows '换下一批'."""
+        results = self._make_results(6)
+        skills_map = self._make_map(6)
+        output = format_match_results_for_display(results, skills_map, batch_num=1)
+        assert "找到 4 个匹配的 Skills" in output
+        assert "n. 换下一批" in output
+        assert "1." in output
+        assert "4." in output
+        assert "5." not in output
+
+    def test_batch2_shows_pagination_next(self):
+        """Batch 2 with more results shows '换下一批'."""
+        results = self._make_results(9)  # 9 items = 3 batches (4, 4, 1)
+        skills_map = self._make_map(9)
+        output = format_match_results_for_display(results, skills_map, batch_num=2)
+        assert "还有 5 个匹配的 Skills" in output  # 9 - 4 = 5 remaining
+        assert "n. 换下一批" in output
+        assert "5." in output
+        assert "8." in output
+
+    def test_batch3_final_shows_no_more(self):
+        """Batch 3 (final) shows '没有了' instead of pagination."""
+        results = self._make_results(11)
+        skills_map = self._make_map(11)
+        output = format_match_results_for_display(results, skills_map, batch_num=3)
+        assert "n. 没有了" in output
+        assert "没有了（放弃，会话结束）" in output
+
+    def test_single_batch_allows_selection(self):
+        """With only 3 results and batch_size=4, single batch shows no pagination."""
+        results = self._make_results(3)
+        skills_map = self._make_map(3)
+        output = format_match_results_for_display(results, skills_map, batch_num=1)
+        assert "找到 3 个匹配的 Skills" in output
+        assert "n. 没有了" in output
+
+    def test_batch_size_respected(self):
+        """Each batch shows at most batch_size results."""
+        results = self._make_results(12)
+        skills_map = self._make_map(12)
+        # Batch 1
+        output1 = format_match_results_for_display(results, skills_map, batch_num=1)
+        assert "/skill1" in output1
+        assert "/skill4" in output1
+        assert "/skill5" not in output1
+        # Batch 2
+        output2 = format_match_results_for_display(results, skills_map, batch_num=2)
+        assert "/skill5" in output2
+        assert "/skill8" in output2
+        assert "/skill9" not in output2
+        # Batch 3
+        output3 = format_match_results_for_display(results, skills_map, batch_num=3)
+        assert "/skill9" in output3
+        assert "/skill12" in output3
 
 
 class TestIndexStaleOrMissing:

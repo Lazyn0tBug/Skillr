@@ -14,6 +14,10 @@ class SkillMeta(BaseModel):
     name: str = Field(description="Skill name from SKILL.md frontmatter 'name' field (slash command = /<name>)")
     description: str = Field(description="Skill description from SKILL.md frontmatter (used for LLM matching)")
     file_path: Path = Field(description="Absolute path to the SKILL.md file")
+    has_slash_command: bool = Field(
+        default=True,
+        description="Whether this skill has a registered slash command. False for agent-like skills (e.g., hermes) that require '使用 <name> skill' format",
+    )
 
 
 class SourceTracking(BaseModel):

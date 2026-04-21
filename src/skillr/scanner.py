@@ -95,15 +95,17 @@ def parse_skill_frontmatter(skill_md_path: Path) -> SkillMeta | None:
 
     name = frontmatter.get("name")
     description = frontmatter.get("description")
+    has_slash_command = frontmatter.get("has_slash_command", True)
 
     if not name or not description:
         warnings.warn(f"SKILL.md missing 'name' or 'description': {skill_md_path}")
         return None
 
     return SkillMeta(
-        name=str(name),
+        name=str(name).strip(),
         description=str(description),
         file_path=skill_md_path,
+        has_slash_command=bool(has_slash_command),
     )
 
 
