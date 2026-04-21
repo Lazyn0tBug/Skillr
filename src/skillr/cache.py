@@ -127,8 +127,7 @@ class IntentCacheStore:
         """Remove all cache entries whose skill_ids_hash matches (skill content changed)."""
         cache = self._load_cache()
         to_remove = [
-            h for h, entry in cache.entries.items()
-            if entry.skill_ids_hash == skill_ids_hash
+            h for h, entry in cache.entries.items() if entry.skill_ids_hash == skill_ids_hash
         ]
         for h in to_remove:
             del cache.entries[h]

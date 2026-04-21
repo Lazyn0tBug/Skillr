@@ -251,6 +251,6 @@ class TestScenarioMalformedSkills:
         from skillr.scanner import scan_skills_dir
 
         # Should not raise, should skip bad files
-        result = scan_skills_dir(malformed_skills_dir)
+        skills, file_mtimes = scan_skills_dir(malformed_skills_dir)
         # No valid skills in malformed dir
-        assert len(result) == 0
+        assert len(skills) == 0

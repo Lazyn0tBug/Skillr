@@ -143,18 +143,20 @@ class TestParseSkillFrontmatter:
 
 class TestScanSkillsDir:
     def test_empty_directory(self, tmp_path: Path):
-        result = scan_skills_dir(tmp_path)
-        assert result == []
+        skills, file_mtimes = scan_skills_dir(tmp_path)
+        assert skills == []
+        assert file_mtimes == {}
 
     def test_no_skills_md(self, tmp_path: Path):
         (tmp_path / "some-file.txt").write_text("content", encoding="utf-8")
-        result = scan_skills_dir(tmp_path)
-        assert result == []
+        skills, file_mtimes = scan_skills_dir(tmp_path)
+        assert skills == []
+        assert file_mtimes == {}
 
     def test_scans_subdirectories(self, sample_skills_dir: Path):
-        result = scan_skills_dir(sample_skills_dir)
-        assert len(result) == 3
-        names = {s.name for s in result}
+        skills, file_mtimes = scan_skills_dir(sample_skills_dir)
+        assert len(skills) == 3
+        names = {s.name for s in skills}
         assert "valid-skill" in names
         assert "another-skill" in names
         assert "third-skill" in names
@@ -168,10 +170,12 @@ class TestScanSkillsDir:
         (skill_dir / "SKILL.md").write_text(
             "---\nname: real-skill\ndescription: real\n---\n\n# Real\n", encoding="utf-8"
         )
-        result = scan_skills_dir(tmp_path)
-        assert len(result) == 1
-        assert result[0].name == "real-skill"
+        skills, file_mtimes = scan_skills_dir(tmp_path)
+        assert len(skills) == 1
+        assert skills[0].name == "real-skill"
+        assert "real-skill" in file_mtimes
 
     def test_non_existent_directory(self, tmp_path: Path):
-        result = scan_skills_dir(tmp_path / "does-not-exist")
-        assert result == []
+        skills, file_mtimes = scan_skills_dir(tmp_path / "does-not-exist")
+        assert skills == []
+        assert file_mtimes == {}

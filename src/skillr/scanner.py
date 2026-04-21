@@ -109,17 +109,33 @@ def parse_skill_frontmatter(skill_md_path: Path) -> SkillMeta | None:
     )
 
 
-def scan_skills_dir(skills_dir: Path) -> list[SkillMeta]:
+def get_skill_file_mtime(skill_md_path: Path) -> str:
+    """Return the mtime of a SKILL.md file as an ISO string."""
+    try:
+        mtime = skill_md_path.stat().st_mtime
+        from datetime import UTC, datetime
+
+        return datetime.fromtimestamp(mtime, tz=UTC).isoformat()
+    except OSError:
+        return ""
+
+
+def scan_skills_dir(skills_dir: Path) -> tuple[list[SkillMeta], dict[str, str]]:
     """Scan a single skills_dir and return all discovered SkillMeta entries.
+
+    Returns:
+        skills: list of SkillMeta for discovered skills
+        file_mtimes: dict of skill_name -> mtime ISO string (for incremental index)
 
     Walks immediate subdirectories looking for SKILL.md files.
     Skips subdirectories without SKILL.md.
     """
     skills: list[SkillMeta] = []
+    file_mtimes: dict[str, str] = {}
 
     if not skills_dir.is_dir():
         warnings.warn(f"skills_dir is not a directory: {skills_dir}")
-        return skills
+        return skills, file_mtimes
 
     for entry in sorted(skills_dir.iterdir()):
         if not entry.is_dir():
@@ -130,5 +146,6 @@ def scan_skills_dir(skills_dir: Path) -> list[SkillMeta]:
         skill = parse_skill_frontmatter(skill_md)
         if skill is not None:
             skills.append(skill)
+            file_mtimes[skill.name] = get_skill_file_mtime(skill_md)
 
-    return skills
+    return skills, file_mtimes

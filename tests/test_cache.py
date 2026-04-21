@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import time
 from pathlib import Path
 from unittest.mock import patch
@@ -10,7 +9,7 @@ from unittest.mock import patch
 import pytest
 
 from skillr.cache import IntentCacheStore
-from skillr.models import IntentCache, IntentCacheEntry, MatchResult
+from skillr.models import MatchResult
 
 
 @pytest.fixture
@@ -154,8 +153,12 @@ class TestIntentCacheStore:
         intent_hash_2 = IntentCacheStore.hash_intent("task 2")
         skill_ids_hash = IntentCacheStore.hash_skill_ids(["skill-a"])
 
-        store.set(intent_hash_1, skill_ids_hash, [MatchResult(name="s1", score=0.9, match_reason="r1")])
-        store.set(intent_hash_2, skill_ids_hash, [MatchResult(name="s2", score=0.8, match_reason="r2")])
+        store.set(
+            intent_hash_1, skill_ids_hash, [MatchResult(name="s1", score=0.9, match_reason="r1")]
+        )
+        store.set(
+            intent_hash_2, skill_ids_hash, [MatchResult(name="s2", score=0.8, match_reason="r2")]
+        )
 
         # Invalidate by skill hash
         store.invalidate_by_skill_ids(skill_ids_hash)

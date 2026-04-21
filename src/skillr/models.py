@@ -29,6 +29,12 @@ class SourceTracking(BaseModel):
 
     type: Literal["git", "mtime"] = Field(description="Tracking strategy for this directory")
     value: str = Field(description="For 'git': commit hash. For 'mtime': mtime as ISO string")
+    # Per-skill-file mtime tracking: skill_name -> mtime as ISO string
+    # Used for incremental index updates (detect which files changed)
+    file_mtimes: dict[str, str] = Field(
+        default_factory=dict,
+        description="Per-skill file mtimes: skill name -> mtime ISO string",
+    )
 
 
 class SkillrIndex(BaseModel):

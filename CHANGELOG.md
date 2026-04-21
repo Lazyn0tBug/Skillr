@@ -20,6 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `route_intent_cached()` and `cache_match_results()` functions in router.py for cache-aware routing
 - `tests/test_cache.py` with 11 tests covering cache hit/miss, TTL expiry, invalidation, and persistence
 
+### Added (E2)
+- `SourceTracking.file_mtimes` dict for per-skill-file mtime tracking
+- `scanner.scan_skills_dir()` now returns `tuple[list[SkillMeta], dict[str, str]]` — skills + per-skill mtimes
+- `indexer.build_incremental_index()` — skips dirs whose file_mtimes unchanged since last build
+- `indexer._skills_from_dir()` helper — matches skill's `file_path.parent.parent` to skills_dir
+- `tests/test_indexer.py::TestIncrementalIndex` — 5 tests for incremental scan, mtime change detection, and delete detection
+
 ## [0.1.2] - 2026-04-21
 
 ### Added
