@@ -74,8 +74,8 @@ def parse_matcher_response(response_text: str) -> list[MatchResult] | None:
 
     Returns None if parsing fails.
     """
-    # Try to find JSON array in the response
-    json_match = re.search(r"\[[\s\S]*\]", response_text)
+    # Try to find JSON array in the response (non-greedy)
+    json_match = re.search(r"\[[\s\S]*?\]", response_text)
     if not json_match:
         return None
 

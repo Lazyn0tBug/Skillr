@@ -6,6 +6,8 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from pydantic import ValidationError
+
 from .config import ensure_plugin_data_dir, get_skills_dirs
 from .models import SkillMeta, SkilrIndex, SourceTracking
 from .scanner import (
@@ -16,7 +18,7 @@ from .scanner import (
 )
 
 
-def get_source_tracking_value(skills_dir: Path) -> dict:
+def get_source_tracking_value(skills_dir: Path) -> dict[str, str]:
     """Return the tracking dict for a skills_dir.
 
     Tier 1: git-aware (if directory is a git repo)
@@ -26,10 +28,10 @@ def get_source_tracking_value(skills_dir: Path) -> dict:
         commit_hash = get_git_commit_hash(skills_dir)
         if commit_hash:
             return {"type": "git", "value": commit_hash}
-    # Fall back to per-file mtime of the dir itself as a proxy
     try:
         mtime = skills_dir.stat().st_mtime
-        return {"type": "mtime", "value": str(mtime)}
+        from datetime import datetime, timezone
+        return {"type": "mtime", "value": datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()}
     except OSError:
         return {"type": "mtime", "value": "0"}
 
@@ -92,7 +94,7 @@ def load_index() -> SkilrIndex | None:
     try:
         data = json.loads(index_path.read_text(encoding="utf-8"))
         return SkilrIndex.model_validate(data)
-    except (json.JSONDecodeError, ValueError):
+    except (json.JSONDecodeError, ValidationError):
         return None
 
 

@@ -27,7 +27,7 @@ def build_intent_prompt(user_task: str) -> str:
     return INTENT_PROMPT_TEMPLATE.format(user_task=user_task)
 
 
-def parse_intent_response(response_text: str) -> IntentSpec | None:
+def parse_intent_response(response_text: str, user_task: str) -> IntentSpec | None:
     """Parse the LLM's JSON response into an IntentSpec.
 
     Attempts to extract JSON from the response text.
@@ -37,7 +37,7 @@ def parse_intent_response(response_text: str) -> IntentSpec | None:
     import re
 
     # Try to find JSON block in the response
-    json_match = re.search(r"\{[\s\S]*\}", response_text)
+    json_match = re.search(r"\{[\s\S]*?\}", response_text)
     if not json_match:
         return None
 
@@ -52,9 +52,13 @@ def parse_intent_response(response_text: str) -> IntentSpec | None:
     if not isinstance(data.get("keywords"), list):
         return None
 
+    constraints = data.get("constraints", [])
+    if not isinstance(constraints, list):
+        return None
+
     return IntentSpec(
         original_task=user_task,
         intent=data["intent"],
-        constraints=data.get("constraints", []),
+        constraints=constraints,
         keywords=data.get("keywords", []),
     )

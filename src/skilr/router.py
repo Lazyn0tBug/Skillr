@@ -68,7 +68,8 @@ def format_match_results_for_display(
     if not match_results:
         return "未找到匹配的 Skills。"
 
-    lines = ["找到 {n} 个匹配的 Skills：", ""]
+    n = len(match_results)
+    lines = [f"找到 {n} 个匹配的 Skills：", ""]
     for i, result in enumerate(match_results, 1):
         skill = skills_map.get(result.name)
         skill_name = skill.name if skill else result.name
@@ -77,7 +78,7 @@ def format_match_results_for_display(
     lines.append("")
     lines.append("请输入编号选择（支持多选，用逗号分隔，如 1,2）：")
 
-    return "\n".join(lines).format(n=len(match_results))
+    return "\n".join(lines)
 
 
 def index_stale_or_missing() -> bool:
