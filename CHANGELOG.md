@@ -18,11 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Python with uv + ty + ruff + pyproject.toml
 - Index stored at `${CLAUDE_PLUGIN_DATA}/index/`
 - Skill discovery via YAML frontmatter parsing of `SKILL.md`
-- Lazy index rebuild via mtime check
-- User config for skills_dirs via plugin.json userConfig
+- **mtime per-file**: tracks individual SKILL.md mtimes, not parent directory mtime
+- **No index size limit**: retrieval_window for LLM context overflow protection (not a hard limit)
 - **LLM invocation**: CE pattern — Markdown Skill + Task dispatch sub-agent (model: inherit), no direct API calls
-- **Command output bifurcation**: slash command Skills output `/<command> <intent>`; non-slash-command Skills output `我想用 <skill_name> skill <intent>`
 - **userConfig.skills_dirs type**: object `{description, sensitive}`, not string array
-- **JSON-only index**: R7 specifies JSON format only, no SKILR_INDEX.md generation
+- **JSON-only index**: R7 specifies JSON only; SKILR_INDEX.md deferred to vector DB version
 - **No independent triggers field**: use full `description` for LLM matching (contains trigger semantics)
 - **Simplified command output (MVP)**: all Skills output `/<name> <intent>`, bifurcation deferred
+- **Sub-agent interface**: IntentSpec + MatchResult + keyword_filter/llm_rank functions, per CE pattern

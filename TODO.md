@@ -14,7 +14,8 @@ Future work and known issues for Skillr.
 - [ ] LLM prompt templates need field testing and tuning
 - [ ] YAML frontmatter parsing edge cases not yet identified
 - [ ] No vector database upgrade path implemented
-- [ ] **Simplified to MVP: all Skills output `/<name> <intent>` — bifurcation deferred to later version**
+- [ ] mtime tracking is per-file; confirm this catches all stale-index scenarios on target OSes
+- [ ] retrieval_window default value (50) needs field testing
 
 ## Future Enhancements
 
@@ -27,7 +28,8 @@ Future work and known issues for Skillr.
 - [ ] Rust implementation for performance-critical paths
 - [ ] **Command bifurcation: `/<cmd> refine(<intent>)` vs `我想用 <skill> skill <intent>`**
 - [ ] **Subcommand detection: detect if SKILL.md has subcommand tables**
-- [ ] **Description trigger extraction: parse "TRIGGER when:" / "Use when:" patterns**
+- [ ] **SKILR_INDEX.md generation: Markdown-format human-readable index**
+- [ ] **CLAUDE_PLUGIN_DATA env var verification**: confirm Claude Code Plugin SDK behavior
 
 ## Non-Goals (Explicitly Excluded)
 

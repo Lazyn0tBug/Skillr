@@ -23,12 +23,16 @@ Session tracking for Skillr development.
 | SKILL.md as standard skill entry format | Aligns with Claude Code Plugin SDK |
 | Python + uv + ty + ruff + pyproject.toml | Modern Python toolchain, fast iteration |
 | Index stored at `${CLAUDE_PLUGIN_DATA}/index/` | Persistent across plugin updates, no user directory pollution |
+| **mtime per-file tracking** | Tracks individual SKILL.md file mtimes, not directory mtime; catches content edits |
+| **No index size limit** | Index can hold any number of skills; `retrieval_window` protects LLM context |
 | Lazy index rebuild via mtime check | No daemon needed, fast per-call check |
 | Pure command string output (copy-paste execution) | Zero friction; user gets a command to copy-paste, not auto-execution |
 | **LLM via CE sub-agent pattern** | Markdown Skill + Task dispatch sub-agent (model: inherit), not direct API calls |
 | `userConfig.skills_dirs` as object type `{description, sensitive}` | Per SDK schema, not string array |
-| **Command output bifurcation** | Slash command Skills: `/<cmd> <intent>`; Non-slash-command: `我想用 <skill> skill <intent>` |
-| JSON-only index (no SKILR_INDEX.md) | R7 only specifies JSON; Markdown index not required |
+| JSON-only index (no SKILR_INDEX.md in MVP) | R7 only specifies JSON; Markdown index deferred to vector DB version |
+| No independent triggers field | Description itself contains trigger semantics; simplified for MVP |
+| **Simplified command output (MVP)** | All Skills output `/<name> <intent>`; bifurcation deferred |
+| **Sub-agent interface specified** | IntentSpec + MatchResult + keyword_filter/llm_rank; follows CE pattern |
 
 ### Technical Stack Confirmed
 
@@ -37,8 +41,9 @@ Session tracking for Skillr development.
 - **CLI Builder:** ty
 - **Linter/Formatter:** ruff
 - **Project Config:** pyproject.toml
-- **LLM:** Claude Code built-in (透传)
-- **Skill Format:** SKILL.md with YAML frontmatter
+- **LLM:** Claude Code built-in (透传 via CE sub-agent pattern)
+- **Skill Format:** SKILL.md with YAML frontmatter (name, description only — no triggers field)
+- **Index:** JSON-only; `retrieval_window` for context overflow protection (no hard limit)
 
 ### Architecture Confirmed
 
