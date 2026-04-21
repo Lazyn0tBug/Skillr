@@ -5,7 +5,7 @@ Future work and known issues for Skillr.
 ## In Progress
 
 - [ ] Unit 1: Project Foundation — pyproject.toml, plugin.json, SKILL.md files (Markdown Skill pattern)
-- [ ] Unit 2: Skill Scanner — scanner.py, indexer.py, models.py (has_slash_command field), config.py
+- [ ] Unit 2: Skill Scanner — scanner.py, indexer.py, models.py (SkillMeta, SkilrIndex with tiered mtime), config.py
 - [ ] Unit 3: Skill Router — router.py, intent.py, matcher.py + command output bifurcation
 - [ ] Unit 4: Output Artifacts — CHANGELOG.md, TODO.md, Session.md
 
@@ -14,7 +14,7 @@ Future work and known issues for Skillr.
 - [ ] LLM prompt templates need field testing and tuning
 - [ ] YAML frontmatter parsing edge cases not yet identified
 - [ ] No vector database upgrade path implemented
-- [ ] mtime tracking is per-file; confirm this catches all stale-index scenarios on target OSes
+- [ ] mtime tiered strategy: verify git-aware detection works for project skills_dirs; confirm per-file mtime catches all stale-index scenarios on target OSes
 - [ ] retrieval_window default value (50) needs field testing
 
 ## Future Enhancements

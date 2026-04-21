@@ -23,16 +23,16 @@ Session tracking for Skillr development.
 | SKILL.md as standard skill entry format | Aligns with Claude Code Plugin SDK |
 | Python + uv + ty + ruff + pyproject.toml | Modern Python toolchain, fast iteration |
 | Index stored at `${CLAUDE_PLUGIN_DATA}/index/` | Persistent across plugin updates, no user directory pollution |
-| **mtime per-file tracking** | Tracks individual SKILL.md file mtimes, not directory mtime; catches content edits |
+| **mtime tiered strategy** | git-aware (git ls-files) > per-file mtime > per-dir mtime; catches edits reliably across NFS/USB/OS quirks |
 | **No index size limit** | Index can hold any number of skills; `retrieval_window` protects LLM context |
 | Lazy index rebuild via mtime check | No daemon needed, fast per-call check |
 | Pure command string output (copy-paste execution) | Zero friction; user gets a command to copy-paste, not auto-execution |
-| **LLM via CE sub-agent pattern** | Markdown Skill + Task dispatch sub-agent (model: inherit), not direct API calls |
+| **LLM via CE main session** | Markdown Skill drives main session LLM; no sub-agent dispatch (SDK constraint: sub-agents cannot nest) |
+| `intent.py` / `matcher.py` as prompt templates | Not sub-agent dispatch functions; main session LLM uses templates for IntentSpec + MatchResult |
 | `userConfig.skills_dirs` as object type `{description, sensitive}` | Per SDK schema, not string array |
 | JSON-only index (no SKILR_INDEX.md in MVP) | R7 only specifies JSON; Markdown index deferred to vector DB version |
 | No independent triggers field | Description itself contains trigger semantics; simplified for MVP |
 | **Simplified command output (MVP)** | All Skills output `/<name> <intent>`; bifurcation deferred |
-| **Sub-agent interface specified** | IntentSpec + MatchResult + keyword_filter/llm_rank; follows CE pattern |
 
 ### Technical Stack Confirmed
 
@@ -41,7 +41,7 @@ Session tracking for Skillr development.
 - **CLI Builder:** ty
 - **Linter/Formatter:** ruff
 - **Project Config:** pyproject.toml
-- **LLM:** Claude Code built-in (透传 via CE sub-agent pattern)
+- **LLM:** Claude Code built-in (SKILL.md drives main session; no sub-agent dispatch)
 - **Skill Format:** SKILL.md with YAML frontmatter (name, description only — no triggers field)
 - **Index:** JSON-only; `retrieval_window` for context overflow protection (no hard limit)
 
