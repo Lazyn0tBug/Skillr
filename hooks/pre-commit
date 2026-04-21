@@ -1,0 +1,23 @@
+#!/bin/bash
+# Pre-commit hook: format and lint changed Python files
+
+set -e
+
+echo "Running pre-commit format check..."
+
+# Get list of staged Python files (grep returns exit 1 if no matches)
+staged_files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$') || true
+
+if [ -z "$staged_files" ]; then
+    echo "No Python files staged, skipping."
+    exit 0
+fi
+
+# Run ruff check (fix mode) and ruff format on staged files
+echo "$staged_files" | xargs uv run ruff check --fix
+echo "$staged_files" | xargs uv run ruff format
+
+# Re-stage formatted/fixed files
+echo "$staged_files" | xargs git add
+
+echo "Format check passed."
