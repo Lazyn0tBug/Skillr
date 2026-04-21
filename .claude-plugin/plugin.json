@@ -1,0 +1,15 @@
+{
+  "name": "skilr",
+  "version": "0.0.1",
+  "description": "Skill routing framework — find the right Skill and assemble executable command suggestions.",
+  "author": {
+    "name": "gpdi"
+  },
+  "license": "MIT",
+  "userConfig": {
+    "skills_dirs": {
+      "description": "List of directories to scan for Skills. Each directory should contain Skill subdirectories with SKILL.md files.",
+      "sensitive": false
+    }
+  }
+}
