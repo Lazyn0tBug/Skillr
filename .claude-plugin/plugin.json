@@ -1,0 +1,9 @@
+{
+  "name": "skillr",
+  "version": "0.1.2",
+  "description": "Skill routing framework — find the right Skill and assemble executable command suggestions.",
+  "author": {
+    "name": "gpdi"
+  },
+  "license": "MIT"
+}
