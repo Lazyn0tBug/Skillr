@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
-from pydantic import ValidationError
 
 from skillr.indexer import (
     build_index,
@@ -17,7 +16,7 @@ from skillr.indexer import (
     save_index,
     scan_all_skills_dirs,
 )
-from skillr.models import SkillMeta, SkillrIndex, SourceTracking
+from skillr.models import SkillrIndex, SourceTracking
 
 
 class TestGetSourceTrackingValue:
@@ -68,7 +67,10 @@ class TestScanAllSkillsDirs:
         )
 
         mocker.patch("skillr.indexer.get_skills_dirs", return_value=[dir1, dir2])
-        mocker.patch("skillr.indexer.get_source_tracking_value", return_value=SourceTracking(type="mtime", value="0"))
+        mocker.patch(
+            "skillr.indexer.get_source_tracking_value",
+            return_value=SourceTracking(type="mtime", value="0"),
+        )
 
         skills, tracking = scan_all_skills_dirs()
         assert len(skills) == 1
@@ -99,7 +101,7 @@ class TestSaveIndex:
 
         index = SkillrIndex(
             version="1.0.0",
-            generated_at=datetime.now(timezone.utc).isoformat(),
+            generated_at=datetime.now(UTC).isoformat(),
             skills_dirs=[],
             skills=[],
             source_tracking={},
@@ -135,7 +137,11 @@ class TestLoadIndex:
             "generated_at": "2026-01-01T00:00:00Z",
             "skills_dirs": ["/skills"],
             "skills": [
-                {"name": "test-skill", "description": "A test", "file_path": "/skills/test/SKILL.md"}
+                {
+                    "name": "test-skill",
+                    "description": "A test",
+                    "file_path": "/skills/test/SKILL.md",
+                }
             ],
             "source_tracking": {"/skills": {"type": "mtime", "value": "0"}},
             "retrieval_window": 50,
@@ -160,7 +166,9 @@ class TestLoadIndex:
         result = load_index()
         assert result is None
 
-    def test_returns_none_on_validation_error(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def test_returns_none_on_validation_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
         plugin_data = tmp_path / "plugin_data"
         plugin_data.mkdir()
         monkeypatch.setenv("CLAUDE_PLUGIN_DATA", str(plugin_data))

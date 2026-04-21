@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from skillr.matcher import MatchResult
 from skillr.models import SkillMeta
 from skillr.router import (
@@ -147,10 +145,16 @@ class TestFormatMatchResultsPagination:
     """Test batch pagination in format_match_results_for_display."""
 
     def _make_results(self, count: int) -> list[MatchResult]:
-        return [MatchResult(name=f"skill{i}", score=0.9, match_reason=f"Reason {i}") for i in range(1, count + 1)]
+        return [
+            MatchResult(name=f"skill{i}", score=0.9, match_reason=f"Reason {i}")
+            for i in range(1, count + 1)
+        ]
 
     def _make_map(self, count: int) -> dict[str, SkillMeta]:
-        return {f"skill{i}": SkillMeta(name=f"skill{i}", description="desc", file_path=Path(f"/p{i}")) for i in range(1, count + 1)}
+        return {
+            f"skill{i}": SkillMeta(name=f"skill{i}", description="desc", file_path=Path(f"/p{i}"))
+            for i in range(1, count + 1)
+        }
 
     def test_batch1_shows_pagination_next(self):
         """Batch 1 with more results shows '换下一批'."""
@@ -247,6 +251,7 @@ class TestColdStartGuidance:
     def test_cold_start_guidance_contains_skill_instructions(self):
         """Cold start guidance shows skill setup instructions."""
         from skillr.router import format_cold_start_guidance
+
         result = format_cold_start_guidance()
         assert "未找到匹配的 Skills" in result
         assert "~/.claude/skills/" in result
@@ -255,6 +260,7 @@ class TestColdStartGuidance:
     def test_empty_skills_shows_cold_start_guidance(self):
         """Empty skills_map with empty results shows cold start, not generic no-match."""
         from skillr.router import format_match_results_for_display
+
         result = format_match_results_for_display([], {})
         assert "未找到匹配的 Skills" in result
         assert "还没有配置任何 Skills" in result

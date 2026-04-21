@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -12,7 +12,6 @@ from .config import ensure_plugin_data_dir, get_skills_dirs
 from .models import SkillMeta, SkillrIndex, SourceTracking
 from .scanner import (
     get_git_commit_hash,
-    get_git_tracked_files,
     is_git_repo,
     scan_skills_dir,
 )
@@ -30,7 +29,7 @@ def get_source_tracking_value(skills_dir: Path) -> SourceTracking:
             return SourceTracking(type="git", value=commit_hash)
     try:
         mtime = skills_dir.stat().st_mtime
-        return SourceTracking(type="mtime", value=datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat())
+        return SourceTracking(type="mtime", value=datetime.fromtimestamp(mtime, tz=UTC).isoformat())
     except OSError:
         return SourceTracking(type="mtime", value="0")
 
@@ -61,7 +60,7 @@ def build_index() -> SkillrIndex:
 
     return SkillrIndex(
         version="1.0.0",
-        generated_at=datetime.now(timezone.utc).isoformat(),
+        generated_at=datetime.now(UTC).isoformat(),
         skills_dirs=skills_dirs,
         skills=skills,
         source_tracking=source_tracking,

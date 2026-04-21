@@ -3,15 +3,13 @@
 from __future__ import annotations
 
 import json
-import os
 import subprocess
-import tempfile
 from pathlib import Path
 
 import pytest
 
-
 # === Temp skills directory fixtures ===
+
 
 @pytest.fixture
 def temp_skills_dir(tmp_path: Path) -> Path:
@@ -94,6 +92,7 @@ def malformed_skills_dir(tmp_path: Path) -> Path:
 
 # === Mock config fixtures ===
 
+
 @pytest.fixture
 def mock_plugin_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Set CLAUDE_PLUGIN_DATA to a temp directory and return its path."""
@@ -130,6 +129,7 @@ def valid_config(mock_config_file: Path, sample_skills_dir: Path) -> Path:
 
 
 # === Subprocess mock helpers ===
+
 
 class MockSubprocessResult:
     """Build a mock subprocess.CompletedProcess result."""

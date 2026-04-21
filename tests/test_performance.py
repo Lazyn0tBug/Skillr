@@ -15,7 +15,6 @@ from __future__ import annotations
 import json
 import random
 import string
-from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -24,8 +23,8 @@ from skillr.intent import build_intent_prompt, parse_intent_response
 from skillr.matcher import build_matcher_prompt, keyword_filter, parse_matcher_response
 from skillr.models import IntentSpec, SkillMeta
 
-
 # === Benchmark fixtures ===
+
 
 def generate_skills(count: int) -> list[SkillMeta]:
     """Generate N skills for benchmark testing."""
@@ -33,7 +32,9 @@ def generate_skills(count: int) -> list[SkillMeta]:
     for i in range(count):
         name = f"skill-{i}-{''.join(random.choices(string.ascii_lowercase, k=8))}"
         desc = f"Description for skill {i} with some keywords like api rest database auth"
-        skills.append(SkillMeta(name=name, description=desc, file_path=Path(f"/skills/{i}/SKILL.md")))
+        skills.append(
+            SkillMeta(name=name, description=desc, file_path=Path(f"/skills/{i}/SKILL.md"))
+        )
     return skills
 
 
@@ -64,22 +65,31 @@ def intent_spec():
 
 @pytest.fixture
 def intent_response_json():
-    return json.dumps({
-        "intent": "Build a REST API with JWT authentication",
-        "constraints": ["must use JWT", "python required"],
-        "keywords": ["api", "rest", "jwt", "auth"],
-    })
+    return json.dumps(
+        {
+            "intent": "Build a REST API with JWT authentication",
+            "constraints": ["must use JWT", "python required"],
+            "keywords": ["api", "rest", "jwt", "auth"],
+        }
+    )
 
 
 @pytest.fixture
 def matcher_response_json():
-    return json.dumps([
-        {"name": f"skill-{i}", "score": round(random.uniform(0.5, 1.0), 2), "match_reason": f"Reason {i}"}
-        for i in range(20)
-    ])
+    return json.dumps(
+        [
+            {
+                "name": f"skill-{i}",
+                "score": round(random.uniform(0.5, 1.0), 2),
+                "match_reason": f"Reason {i}",
+            }
+            for i in range(20)
+        ]
+    )
 
 
 # === keyword_filter benchmarks ===
+
 
 def test_keyword_filter_100(benchmark, skill_list_100):
     keywords = ["api", "rest", "auth"]
@@ -101,6 +111,7 @@ def test_keyword_filter_10000(benchmark, skill_list_10000):
 
 # === parse_intent_response benchmarks ===
 
+
 def test_parse_intent_response(benchmark, intent_response_json):
     result = benchmark(parse_intent_response, intent_response_json, "original task")
     assert result is not None
@@ -118,6 +129,7 @@ def test_parse_intent_response_large(benchmark):
 
 # === parse_matcher_response benchmarks ===
 
+
 def test_parse_matcher_response(benchmark, matcher_response_json):
     result = benchmark(parse_matcher_response, matcher_response_json)
     assert result is not None
@@ -125,15 +137,22 @@ def test_parse_matcher_response(benchmark, matcher_response_json):
 
 def test_parse_matcher_response_large(benchmark):
     # Large response with many skills
-    large_response = json.dumps([
-        {"name": f"skill-{i}", "score": round(random.uniform(0.5, 1.0), 2), "match_reason": f"Match reason for skill {i}"}
-        for i in range(100)
-    ])
+    large_response = json.dumps(
+        [
+            {
+                "name": f"skill-{i}",
+                "score": round(random.uniform(0.5, 1.0), 2),
+                "match_reason": f"Match reason for skill {i}",
+            }
+            for i in range(100)
+        ]
+    )
     result = benchmark(parse_matcher_response, large_response)
     assert result is not None
 
 
 # === build_matcher_prompt benchmarks ===
+
 
 def test_build_matcher_prompt_50(benchmark, skill_list_100, intent_spec):
     result = benchmark(build_matcher_prompt, skill_list_100[:50], intent_spec)
@@ -153,8 +172,12 @@ def test_build_matcher_prompt_500(benchmark, skill_list_1000, intent_spec):
 
 # === build_intent_prompt benchmarks ===
 
+
 def test_build_intent_prompt(benchmark):
-    result = benchmark(build_intent_prompt, "I want to build a comprehensive REST API with authentication and database integration")
+    result = benchmark(
+        build_intent_prompt,
+        "I want to build a comprehensive REST API with authentication and database integration",
+    )
     assert result is not None
 
 

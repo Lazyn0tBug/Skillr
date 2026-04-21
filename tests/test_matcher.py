@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
-
-import pytest
 
 from skillr.matcher import build_matcher_prompt, keyword_filter, parse_matcher_response
 from skillr.models import IntentSpec, SkillMeta
@@ -68,7 +65,9 @@ class TestKeywordFilter:
 class TestBuildMatcherPrompt:
     def test_contains_intent(self):
         skills = []
-        intent = IntentSpec(original_task="test", intent="Build REST API", constraints=[], keywords=["api"])
+        intent = IntentSpec(
+            original_task="test", intent="Build REST API", constraints=[], keywords=["api"]
+        )
         prompt = build_matcher_prompt(skills, intent)
         assert "Build REST API" in prompt
 
@@ -138,7 +137,9 @@ class TestParseMatcherResponse:
         assert result is None
 
     def test_non_greedy_avoids_trailing_content(self):
-        response = '[{"name": "s1", "score": 0.9, "match_reason": "Good"}] and more text [also: "array"]'
+        response = (
+            '[{"name": "s1", "score": 0.9, "match_reason": "Good"}] and more text [also: "array"]'
+        )
         result = parse_matcher_response(response)
         # Should match first array, not second
         assert result is not None

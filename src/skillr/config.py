@@ -45,7 +45,7 @@ def get_skills_dirs() -> list[Path]:
     try:
         with open(config_file) as f:
             config = json.load(f)
-    except (json.JSONDecodeError, IOError):
+    except (OSError, json.JSONDecodeError):
         return []
 
     skills_dirs_raw = config.get("skills_dirs", [])

@@ -2,26 +2,31 @@
 
 from __future__ import annotations
 
-import json
-from datetime import datetime, timezone
 from pathlib import Path
 
-import pytest
-
-from skillr.config import ensure_plugin_data_dir
 from skillr.indexer import build_index, load_index, save_index, scan_all_skills_dirs
 from skillr.intent import build_intent_prompt, parse_intent_response
 from skillr.matcher import build_matcher_prompt, keyword_filter, parse_matcher_response
-from skillr.models import IntentSpec, MatchResult, SkillMeta, SkillrIndex, SourceTracking
-from skillr.router import assemble_command, format_match_results_for_display, parse_selection, select_skill_by_number
+from skillr.models import IntentSpec, MatchResult, SkillMeta, SourceTracking
+from skillr.router import (
+    assemble_command,
+    format_match_results_for_display,
+    parse_selection,
+    select_skill_by_number,
+)
 
 
 class TestScannerIndexerChain:
     """Test scanner -> indexer integration."""
 
-    def test_scan_feeds_into_index(self, sample_skills_dir: Path, mocker, mock_plugin_data_dir: Path):
+    def test_scan_feeds_into_index(
+        self, sample_skills_dir: Path, mocker, mock_plugin_data_dir: Path
+    ):
         mocker.patch("skillr.indexer.get_skills_dirs", return_value=[sample_skills_dir])
-        mocker.patch("skillr.indexer.get_source_tracking_value", return_value=SourceTracking(type="mtime", value="0"))
+        mocker.patch(
+            "skillr.indexer.get_source_tracking_value",
+            return_value=SourceTracking(type="mtime", value="0"),
+        )
 
         skills, tracking = scan_all_skills_dirs()
         assert len(skills) == 3
@@ -36,7 +41,10 @@ class TestConfigScannerIndexerPipeline:
 
     def test_full_pipeline(self, sample_skills_dir: Path, mocker, mock_plugin_data_dir: Path):
         mocker.patch("skillr.indexer.get_skills_dirs", return_value=[sample_skills_dir])
-        mocker.patch("skillr.indexer.get_source_tracking_value", return_value=SourceTracking(type="mtime", value="0"))
+        mocker.patch(
+            "skillr.indexer.get_source_tracking_value",
+            return_value=SourceTracking(type="mtime", value="0"),
+        )
 
         index = build_index()
         path = save_index(index)
@@ -141,7 +149,9 @@ class TestEndToEndIntentParsing:
 
         # Simulate LLM response
         mock_response = '{"intent": "Build a REST API with auth", "constraints": ["python"], "keywords": ["api", "rest", "auth"]}'
-        parsed = parse_intent_response(mock_response, "I want to build a REST API with authentication")
+        parsed = parse_intent_response(
+            mock_response, "I want to build a REST API with authentication"
+        )
         assert parsed is not None
         assert parsed.intent == "Build a REST API with auth"
         assert "python" in parsed.constraints
@@ -166,7 +176,9 @@ class TestEndToEndMatcherParsing:
         assert "Build a REST API with auth" in prompt
 
         # Simulate LLM ranking response
-        mock_response = '[{"name": "api-skill", "score": 0.95, "match_reason": "Exact match for API building"}]'
+        mock_response = (
+            '[{"name": "api-skill", "score": 0.95, "match_reason": "Exact match for API building"}]'
+        )
         parsed = parse_matcher_response(mock_response)
         assert parsed is not None
         assert len(parsed) == 1

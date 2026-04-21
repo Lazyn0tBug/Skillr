@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -24,7 +24,9 @@ from skillr.router import (
 class TestScenarioFullIndexBuild:
     """Scenario 1: Full index build from empty state."""
 
-    def test_run_indexer_produces_valid_index(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker):
+    def test_run_indexer_produces_valid_index(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker
+    ):
         # Setup plugin data dir
         plugin_data = tmp_path / "plugin_data"
         plugin_data.mkdir()
@@ -34,7 +36,11 @@ class TestScenarioFullIndexBuild:
         skills_dir = tmp_path / "skills"
         skills_dir.mkdir()
 
-        for name, desc in [("skill-one", "First skill"), ("skill-two", "Second skill"), ("skill-three", "Third skill")]:
+        for name, desc in [
+            ("skill-one", "First skill"),
+            ("skill-two", "Second skill"),
+            ("skill-three", "Third skill"),
+        ]:
             skill_dir = skills_dir / name
             skill_dir.mkdir(parents=True)
             (skill_dir / "SKILL.md").write_text(
@@ -70,11 +76,13 @@ class TestScenarioIntentParsing:
         assert user_task in prompt
 
         # Simulate LLM returning structured JSON (as the main session LLM would)
-        mock_llm_response = json.dumps({
-            "intent": "Build a JWT-based user authentication system",
-            "constraints": ["must use JWT", "should support refresh tokens"],
-            "keywords": ["auth", "jwt", "login", "user"],
-        })
+        mock_llm_response = json.dumps(
+            {
+                "intent": "Build a JWT-based user authentication system",
+                "constraints": ["must use JWT", "should support refresh tokens"],
+                "keywords": ["auth", "jwt", "login", "user"],
+            }
+        )
 
         # Parse back to IntentSpec
         intent_spec = parse_intent_response(mock_llm_response, user_task)
@@ -91,10 +99,22 @@ class TestScenarioSkillMatching:
     def test_keyword_filter_then_matcher_prompt_and_parse(self):
         # Available skills
         skills = [
-            SkillMeta(name="auth-jwt", description="JWT-based authentication system", file_path=Path("/p1")),
-            SkillMeta(name="api-rest", description="REST API builder with FastAPI", file_path=Path("/p2")),
-            SkillMeta(name="db-postgres", description="PostgreSQL database utilities", file_path=Path("/p3")),
-            SkillMeta(name="frontend-react", description="React component library", file_path=Path("/p4")),
+            SkillMeta(
+                name="auth-jwt",
+                description="JWT-based authentication system",
+                file_path=Path("/p1"),
+            ),
+            SkillMeta(
+                name="api-rest", description="REST API builder with FastAPI", file_path=Path("/p2")
+            ),
+            SkillMeta(
+                name="db-postgres",
+                description="PostgreSQL database utilities",
+                file_path=Path("/p3"),
+            ),
+            SkillMeta(
+                name="frontend-react", description="React component library", file_path=Path("/p4")
+            ),
         ]
 
         # User intent
@@ -116,10 +136,20 @@ class TestScenarioSkillMatching:
         assert "Build a JWT authentication system" in prompt
 
         # Simulate LLM ranking response
-        mock_llm_response = json.dumps([
-            {"name": "auth-jwt", "score": 0.95, "match_reason": "Direct match for JWT auth requirement"},
-            {"name": "api-rest", "score": 0.6, "match_reason": "Could be used to expose auth endpoints"},
-        ])
+        mock_llm_response = json.dumps(
+            [
+                {
+                    "name": "auth-jwt",
+                    "score": 0.95,
+                    "match_reason": "Direct match for JWT auth requirement",
+                },
+                {
+                    "name": "api-rest",
+                    "score": 0.6,
+                    "match_reason": "Could be used to expose auth endpoints",
+                },
+            ]
+        )
 
         # Parse match results
         match_results = parse_matcher_response(mock_llm_response)
@@ -202,7 +232,7 @@ class TestScenarioIndexStaleness:
         index_path = index_dir / "skillr_index.json"
         index_data = {
             "version": "1.0.0",
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
             "skills_dirs": [],
             "skills": [],
             "source_tracking": {},

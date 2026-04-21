@@ -11,7 +11,6 @@ import re
 
 from .models import IntentSpec, MatchResult, SkillMeta
 
-
 FILTER_AND_RANK_PROMPT_TEMPLATE = """
 候选 Skills（JSON 数组）：
 {skills_json}

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -46,7 +46,7 @@ class TestSourceTracking:
         assert tracking.value == "abc123"
 
     def test_mtime_type(self):
-        tracking = SourceTracking(type="mtime", value=datetime.now(timezone.utc).isoformat())
+        tracking = SourceTracking(type="mtime", value=datetime.now(UTC).isoformat())
         assert tracking.type == "mtime"
 
     def test_invalid_type_raises(self):
@@ -65,7 +65,7 @@ class TestSkillrIndex:
         }
         index = SkillrIndex(
             version="1.0.0",
-            generated_at=datetime.now(timezone.utc).isoformat(),
+            generated_at=datetime.now(UTC).isoformat(),
             skills_dirs=["/skills"],
             skills=skills,
             source_tracking=tracking,

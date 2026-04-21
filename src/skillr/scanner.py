@@ -69,7 +69,7 @@ def parse_skill_frontmatter(skill_md_path: Path) -> SkillMeta | None:
     """
     try:
         content = skill_md_path.read_text(encoding="utf-8")
-    except (IOError, OSError) as e:
+    except OSError as e:
         warnings.warn(f"Cannot read {skill_md_path}: {e}")
         return None
 

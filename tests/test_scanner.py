@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
-
-import pytest
 
 from skillr.scanner import (
     get_git_commit_hash,
@@ -94,7 +91,9 @@ class TestGetGitTrackedFiles:
 class TestParseSkillFrontmatter:
     def test_valid_frontmatter(self, tmp_path: Path):
         skill_md = tmp_path / "SKILL.md"
-        skill_md.write_text("---\nname: test-skill\ndescription: A test skill\n---\n\n# Test\n", encoding="utf-8")
+        skill_md.write_text(
+            "---\nname: test-skill\ndescription: A test skill\n---\n\n# Test\n", encoding="utf-8"
+        )
         result = parse_skill_frontmatter(skill_md)
         assert result is not None
         assert result.name == "test-skill"
@@ -121,7 +120,9 @@ class TestParseSkillFrontmatter:
 
     def test_invalid_yaml(self, tmp_path: Path):
         skill_md = tmp_path / "SKILL.md"
-        skill_md.write_text("---\nname: bad\ndescription: [invalid yaml\n---\n\n# Test\n", encoding="utf-8")
+        skill_md.write_text(
+            "---\nname: bad\ndescription: [invalid yaml\n---\n\n# Test\n", encoding="utf-8"
+        )
         result = parse_skill_frontmatter(skill_md)
         assert result is None
 
@@ -131,7 +132,10 @@ class TestParseSkillFrontmatter:
 
     def test_trims_whitespace(self, tmp_path: Path):
         skill_md = tmp_path / "SKILL.md"
-        skill_md.write_text("---\nname:  whitespace-skill  \ndescription:  desc  \n---\n\n# Test\n", encoding="utf-8")
+        skill_md.write_text(
+            "---\nname:  whitespace-skill  \ndescription:  desc  \n---\n\n# Test\n",
+            encoding="utf-8",
+        )
         result = parse_skill_frontmatter(skill_md)
         assert result is not None
         assert result.name == "whitespace-skill"
@@ -161,7 +165,9 @@ class TestScanSkillsDir:
         # Valid skill subdirectory
         skill_dir = tmp_path / "real-skill"
         skill_dir.mkdir()
-        (skill_dir / "SKILL.md").write_text("---\nname: real-skill\ndescription: real\n---\n\n# Real\n", encoding="utf-8")
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: real-skill\ndescription: real\n---\n\n# Real\n", encoding="utf-8"
+        )
         result = scan_skills_dir(tmp_path)
         assert len(result) == 1
         assert result[0].name == "real-skill"

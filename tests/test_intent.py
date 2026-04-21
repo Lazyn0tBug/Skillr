@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from skillr.intent import build_intent_prompt, parse_intent_response
 
 

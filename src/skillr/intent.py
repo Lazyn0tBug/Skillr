@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from .models import IntentSpec
 
-
 INTENT_PROMPT_TEMPLATE = """
 用户任务：{user_task}
 
