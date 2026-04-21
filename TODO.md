@@ -8,6 +8,9 @@ Future work and known issues for Skillr.
 - [x] Unit 2: Skill Scanner — scanner.py, indexer.py, models.py (SkillMeta, SkillrIndex with tiered mtime), config.py
 - [x] Unit 3: Skill Router — router.py, intent.py, matcher.py
 - [x] Unit 4: Output Artifacts — CHANGELOG.md, TODO.md, Session.md
+- [x] Full test suite — 156 tests: unit, integration, scenario, performance
+- [x] Pagination selection — 4 results/batch, max 3 batches, Y/N confirmation
+- [x] Slash/non-slash auto-routing — `has_slash_command` field, dual output format
 
 ## Known Issues
 
@@ -15,7 +18,6 @@ Future work and known issues for Skillr.
 - [ ] YAML frontmatter parsing edge cases not yet identified
 - [ ] mtime tiered strategy: verify git-aware detection works for project skills_dirs; confirm per-file mtime catches all stale-index scenarios on target OSes
 - [ ] retrieval_window default value (50) needs field testing
-- [ ] No tests yet — test scaffold needed
 
 ## Future Enhancements
 
@@ -25,9 +27,7 @@ Future work and known issues for Skillr.
 - [ ] TUI interactive selection interface
 - [ ] Dependency graph / parallel execution for multi-skill plans
 - [ ] DAG state machine for execution plans
-- [ ] Rust implementation for performance-critical paths
-- [ ] **Command bifurcation: `/<cmd> refine(<intent>)` vs `我想用 <skill> skill <intent>`**
-- [ ] **Subcommand detection: detect if SKILL.md has subcommand tables**
+- [ ] Rust implementation for performance-critical paths (scanner speedup)
 - [ ] **SKILR_INDEX.md generation: Markdown-format human-readable index**
 - [ ] **CLAUDE_PLUGIN_DATA env var verification**: confirm Claude Code Plugin SDK behavior
 

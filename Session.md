@@ -81,6 +81,19 @@ skillr/                          # Skillr Plugin root
 2. **LLM prompt tuning** — Will iterate based on actual usage
 3. **Vector DB upgrade** — Design when business need is clear
 
+### New Decisions This Session
+
+| Decision | Rationale |
+|----------|----------|
+| Batch pagination: 4 results/batch, max 3 batches | Avoid information overload; clear "load more" pattern |
+| "n" as fixed pagination option | Consistent UX: same key means same action across batches |
+| Y/N confirmation before output | Users sometimes mis-select; one chance to correct |
+| Slash/non-slash auto-routing | Non-slash skills (hermes agent) need "使用 xxx skill" format |
+| No sub-commands for copy/refine | Auto-detection sufficient; no explicit user toggle needed |
+| Session terminates after command output | IMPORTANT note in SKILL.md; LLM should not add follow-up |
+| Command naming: lowercase `/skillr`, `/skillscan` | Consistency with Claude Code conventions |
+| Removing session flow diagram | SKILL.md workflow is self-documenting |
+
 ## Previous Sessions
 
 (None yet — this is the first session)

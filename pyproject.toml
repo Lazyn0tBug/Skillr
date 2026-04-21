@@ -1,6 +1,6 @@
 [project]
 name = "skillr"
-version = "0.0.9"
+version = "0.1.2"
 description = "Skill routing framework for Claude Code — find the right Skill and assemble executable command suggestions"
 requires-python = ">=3.11"
 dependencies = [
