@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -169,6 +168,9 @@ class TestEmbeddingStore:
         import skillr.router as router_module
 
         router_module._vector_store = store
+
+        # Patch get_embedding_backend to return "model" so vector path is exercised
+        mocker.patch("skillr.config.get_embedding_backend", return_value="model")
 
         from skillr.router import filter_by_intent_vector
 

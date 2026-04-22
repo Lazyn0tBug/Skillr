@@ -92,24 +92,33 @@ def filter_by_intent_vector(
     skills: list[SkillMeta],
     top_k: int = 20,
 ) -> list[SkillMeta]:
-    """Filter skills by semantic similarity to intent_text using vector search.
+    """Filter skills by semantic similarity to intent_text.
 
-    Uses ChromaDB + bge-small-zh ONNX embeddings when available.
-    Falls back to returning the full skills list when vector search is unavailable.
+    Behavior depends on `embedding_backend` config:
+    - 'claude' (default): return skills unchanged. Main session LLM handles
+      semantic matching directly via build_matcher_prompt_for_intent().
+    - 'model': use fastembed ONNX vector pre-filtering (top-k candidates only).
 
     Args:
         intent_text: The user's refined intent text
         skills: All available skills
-        top_k: Number of top candidates to return (default 20)
+        top_k: Number of top candidates to return (model mode only)
 
     Returns:
-        Top-k skills ordered by vector similarity, or full skills list if unavailable
+        Full skills list (claude mode) or top-k candidates (model mode)
     """
+    from .config import get_embedding_backend
+
+    backend = get_embedding_backend()
+    if backend != "model":
+        # 'claude' mode: LLM does direct semantic matching, no preprocessing
+        return skills
+
+    # 'model' mode: vector pre-filtering with fastembed ONNX
     store = _get_vector_store()
     if store is None or not store.available:
         return skills
 
-    # Build skill lookup for O(1) access
     skills_map: dict[str, SkillMeta] = {s.name: s for s in skills}
     if not skills_map:
         return skills
@@ -117,16 +126,13 @@ def filter_by_intent_vector(
     try:
         results = store.search(intent_text, top_k=top_k)
     except Exception:
-        # Vector search failed — fall back to full list
         return skills
 
-    # Return only top-k candidates ordered by vector similarity
     ranked: list[SkillMeta] = []
     for name, score in results:
         if name in skills_map:
             ranked.append(skills_map[name])
 
-    # If vector search returned fewer than top_k, fill with remaining skills in original order
     if len(ranked) < top_k:
         for s in skills:
             if s.name not in {r.name for r in ranked}:

@@ -29,9 +29,11 @@ Example:
    - `constraints`: any constraints you mentioned
    - `keywords`: 3-5 keywords for initial filtering
 
-3. **Vector Pre-filtering** (E3) — Call `filter_by_intent_vector(intent.intent, skills, top_k=20)` to get semantic top-20 candidates. If the function returns fewer than 20, pass what it returns. Falls back to all skills if vector store unavailable.
+3. **Intent Routing** — Call `filter_by_intent_vector(intent.intent, skills, top_k=20)`:
+   - **Default (`embedding_backend: "claude"`)**: returns all skills unchanged. The main session LLM handles semantic matching directly in step 4.
+   - **`embedding_backend: "model"`**: returns top-20 vector-filtered candidates using fastembed ONNX embeddings. Falls back to all skills if vector store unavailable.
 
-4. **LLM Ranking** — With the top-20 vector-filtered candidates, the LLM ranks them by relevance and returns the top 3-5 matches with match reasons.
+4. **LLM Ranking** — With the candidates from step 3, the LLM ranks them by relevance and returns the top 3-5 matches with match reasons.
 
 5. **Selection** — skillr presents up to 4 matches per batch. Each batch ends with option `n` for pagination (or giving up on the last batch).
 

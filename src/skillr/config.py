@@ -30,6 +30,27 @@ def _get_plugin_data_dir() -> Path:
     return Path.home() / ".claude" / "plugins" / "data" / "skillr"
 
 
+def get_embedding_backend() -> str:
+    """Return the configured embedding backend: 'claude' (default) or 'model'.
+
+    'claude': main session LLM does direct semantic matching (no vector preprocessing)
+    'model': fastembed ONNX does vector pre-filtering before LLM ranking
+    """
+    plugin_data_dir = _get_plugin_data_dir()
+    config_file = plugin_data_dir / "config.json"
+
+    if not config_file.exists():
+        return "claude"
+
+    try:
+        with open(config_file) as f:
+            config = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return "claude"
+
+    return config.get("embedding_backend", "claude")
+
+
 def get_skills_dirs() -> list[Path]:
     """Return the configured skills_dirs as expanded Path objects.
 
