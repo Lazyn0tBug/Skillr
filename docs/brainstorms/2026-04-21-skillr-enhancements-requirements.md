@@ -269,9 +269,9 @@ src/skillr/
 ### E5: 用户选择进化 (Selection Evolution)
 
 **目标（分阶段）：**
-- **Phase 1（已完成）：** 建立用户选择历史存储基础设施（JSONL）
-- **Phase 1.5（立即）：** 展示 skill 被选次数（带时间窗口），辅助用户决策
-- **Phase 2（后期）：** 基于历史数据优化 LLM Ranking 权重
+- **Phase 1（已完成）：** 建立用户选择历史存储基础设施（DuckDB）
+- **Phase 1.5（已完成）：** 展示 skill 被选次数（带时间窗口），辅助用户决策
+- **Phase 2（已完成）：** 基于历史数据优化 LLM Ranking 权重
 
 ---
 
@@ -333,22 +333,27 @@ n. 换下一批
 
 ---
 
-#### Phase 2 — Ranking 加权（暂不实现）
+#### Phase 2（已完成）— Ranking 加权
 
 **在 Phase 1.5 完成后进行。**
 
 基于 `selection_history` 表的聚合数据：
 
-- **选择率**：某 skill 被选次数 / 被展示次数
-- **拒绝率**：某 skill 被展示但拒绝的比率
-- **时间衰减**：近期选择权重 > 远期
+- **选择率**：某 skill 被选次数（时间窗口内，默认30天）
+- **时间衰减**：近期选择权重更高（通过近30天窗口实现）
+- **拒绝率：** 暂不实现（需要 schema 扩展以记录展示列表）
 
-**在线应用：**
-- 在 `build_matcher_prompt_for_intent` 注入历史偏好：
+**已实现方式：**
+- `_build_history_context()` 查询 DuckDB 获取 per-skill 选择次数
+- 注入到 `build_matcher_prompt()` 的 prompt 中：
   ```
-  参考：drawio 用户选择率高（85%），miro 用户普遍不感兴趣（拒绝率90%）
+  参考（用户历史选择偏好）：
+    - drawio: 近30天被选 5 次
+    - miro: 近30天被选 2 次
   ```
 - 不改变 LLM Ranking 算法，只在 prompt 中附加信号
+
+**注意：** 注入前提是 skill 在历史中有记录（count > 0），无记录的 skill 不显示。
 
 **DuckDB 聚合（Phase 2 需实现）：**
 ```sql
