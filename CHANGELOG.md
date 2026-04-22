@@ -7,37 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- E0: Cold start guidance — new users with 0 skills see setup instructions instead of generic "no matches"
-- `format_cold_start_guidance()` in router.py for empty skills state
+## [0.1.8] - 2026-04-22
 
-### Changed
-- `format_match_results_for_display()` now differentiates cold start (empty skills) from generic no-match
+### Added (E3)
+- `EmbeddingStore` class in vectors.py — ChromaDB + fastembed ONNX embedding for semantic skill matching
+- `embedding_backend` config option: `"claude"` (default, zero deps) or `"model"` (vector pre-filtering)
+- `filter_by_intent_vector()` in router.py — pre-filters skills by semantic similarity (model mode)
+- `bge-small-zh-v1.5` embedding model via fastembed ONNX (~100MB, no PyTorch)
+- Lazy-load vectors: ChromaDB and fastembed only loaded when `embedding_backend = "model"`
+- `tests/test_vectors.py` — 12 tests for embedding store health, search, and fallback behavior
+
+### Added (E5 Phase 2)
+- `get_skill_stats(skill_names, days)` batch aggregation for multiple skills in one query
+- `_build_history_context()` injects per-skill selection counts into LLM matcher prompt
+- `history_context` parameter added to `build_matcher_prompt()` — LLM ranks with historical preference signal
+- `tests/test_router.py::TestBuildMatcherPromptWithHistory` — verifies context injection
+
+### Added (Security Fixes)
+- ADV-001: Orphaned `.tmp` cleanup on cache load — prevents permanent cache loss after crash during rename
+- ADV-002: `logger.warning()` on DuckDB write/query failures in history.py (silent failures now observable)
+- ADV-006: `cache.invalidate_all()` called after every index rebuild (run_indexer) — cache coherence
+- ADV-007: HMAC-SHA256 cache signature with machine-specific `cache_secret` from config.json — tampering detection
+- `get_cache_secret()` in config.py — generates and persists 256-bit machine-specific cache HMAC key
+- Pre-existing caches (no signature) are trusted on read and re-signed on write
 
 ### Added (E1)
 - `IntentCacheEntry` and `IntentCache` Pydantic models in models.py
 - `IntentCacheStore` class in cache.py — disk-persistent TTL cache at `${CLAUDE_PLUGIN_DATA}/cache/intent_cache.json`
 - `route_intent_cached()` and `cache_match_results()` functions in router.py for cache-aware routing
-- `tests/test_cache.py` with 11 tests covering cache hit/miss, TTL expiry, invalidation, and persistence
+- `tests/test_cache.py` with tests covering cache hit/miss, TTL expiry, invalidation, and persistence
 
 ### Added (E2)
 - `SourceTracking.file_mtimes` dict for per-skill-file mtime tracking
 - `scanner.scan_skills_dir()` now returns `tuple[list[SkillMeta], dict[str, str]]` — skills + per-skill mtimes
 - `indexer.build_incremental_index()` — skips dirs whose file_mtimes unchanged since last build
 - `indexer._skills_from_dir()` helper — matches skill's `file_path.parent.parent` to skills_dir
-- `tests/test_indexer.py::TestIncrementalIndex` — 5 tests for incremental scan, mtime change detection, and delete detection
+- `tests/test_indexer.py::TestIncrementalIndex` — tests for incremental scan, mtime change, and delete detection
 
 ### Added (E5 Phase 1)
 - `SelectionRecord` Pydantic model in models.py — stores intent_hash, selected_skill, rejected_skills, timestamp
 - `SelectionHistoryStore` class in history.py — DuckDB-backed persistent store at `${CLAUDE_PLUGIN_DATA}/selection_history.duckdb`
 - Auto-migration from JSONL on first DuckDB init; renames JSONL to `.bak` after migration
 - `record_selection_history()` and `get_skill_selection_count()` functions in router.py
-- `tests/test_history.py` — 14 tests covering full CRUD, time-windowed queries, and router integration
+- `tests/test_history.py` — tests covering full CRUD, time-windowed queries, and router integration
 
 ### Added (E5 Phase 1.5)
 - `get_skill_selection_count(skill_name, days=30)` returns count within rolling time window
 - `format_match_results_for_display()` shows "已被选 X 次（近30天）" per skill when count > 0
-- `tests/test_router.py::TestSelectionCountDisplay` — 3 tests for count display behavior
+- `tests/test_router.py::TestSelectionCountDisplay` — tests for count display behavior
+
+### Added (E0)
+- E0: Cold start guidance — new users with 0 skills see setup instructions instead of generic "no matches"
+- `format_cold_start_guidance()` in router.py for empty skills state
+
+### Changed
+- `format_match_results_for_display()` now differentiates cold start (empty skills) from generic no-match
+- Removed dead `build_index()` function — `run_indexer()` now calls `build_incremental_index()` only
+- `run_indexer()` calls `cache.invalidate_all()` after every index rebuild (ADV-006)
+- `router.py` imports `_get_history_store` from `history.py` (removed duplicate singleton)
+- `indexer.py` now wires `invalidate_by_skill_ids()` into scan flow (E1↔E2 integration)
+- Config file `${CLAUDE_PLUGIN_DATA}/config.json` now stores `cache_secret` for HMAC key
+- Architecture diagram updated: history.py stays in Python layer; cache.py stays in Python for HMAC
 
 ## [0.1.2] - 2026-04-21
 
