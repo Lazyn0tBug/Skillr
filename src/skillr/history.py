@@ -17,11 +17,11 @@ class SelectionHistoryStore:
 
     Database: ${CLAUDE_PLUGIN_DATA}/selection_history.duckdb
     Table schema:
-        id             — auto-increment primary key
         intent_hash    — SHA256 of the original intent text
         selected_skill — skill name the user selected
         rejected_skills — DuckDB VARCHAR[] of rejected skill names
         created_at     — TIMESTAMP of when selection was recorded
+    Ordering:       — by DuckDB implicit rowid (insertion order)
     """
 
     DB_NAME = "selection_history.duckdb"
@@ -160,6 +160,7 @@ class SelectionHistoryStore:
                 for row in rows
             ]
         except Exception:
+            # Non-blocking — return empty list rather than propagate
             return []
 
     def clear(self) -> None:
@@ -167,6 +168,7 @@ class SelectionHistoryStore:
         try:
             self._conn().execute("DELETE FROM selection_history")
         except Exception:
+            # Non-blocking — clear failure should not disrupt anything
             pass
 
     def record_selection(
@@ -210,6 +212,7 @@ class SelectionHistoryStore:
             count = result[0]
             return count if count > 0 else None
         except Exception:
+            # Non-blocking — return None rather than expose errors to caller
             return None
 
     def close(self) -> None:
