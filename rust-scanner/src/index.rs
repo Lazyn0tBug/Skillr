@@ -74,7 +74,7 @@ pub fn save_index(index: &SkillrIndex, index_path: &Path) -> Result<(), SkillrEr
     }
 
     let tmp_path = index_path.with_extension("json.tmp");
-    let json = serde_json::to_string_pretty(index)?;
+    let json = serde_json::to_string(index)?;
     
     // Write to temp file
     fs::write(&tmp_path, &json)?;
