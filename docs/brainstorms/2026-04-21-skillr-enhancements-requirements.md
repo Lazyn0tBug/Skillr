@@ -376,60 +376,9 @@ CREATE INDEX ON selection_history(created_at);
 
 ---
 
-## E5 执行规划（Phase 1.5 + 迁移）
+## E5 执行规划（Phase 1 + 1.5 已完成）
 
-### Step 1：迁移 JSONL → DuckDB
-
-**修改文件**：`src/skillr/history.py`
-
-- 依赖：`import duckdb`（chromadb 已带，无需 uv add）
-- DuckDB 数据库路径：`${CLAUDE_PLUGIN_DATA}/selection_history.duckdb`
-- 建表：
-```sql
-CREATE TABLE IF NOT EXISTS selection_history (
-    id INTEGER PRIMARY KEY,
-    intent_hash VARCHAR,
-    selected_skill VARCHAR,
-    rejected_skills VARCHAR[],  -- DuckDB 原生 VARCHAR[]
-    created_at TIMESTAMP
-);
-CREATE INDEX ON selection_history(selected_skill);
-CREATE INDEX ON selection_history(created_at);
-```
-- `add_record()` → INSERT INTO
-- `get_all_records()` → SELECT * ORDER BY id
-- `clear()` → DELETE FROM（不删表）
-- 新增：`get_skill_selection_count(skill_name, days=30) → int`
-- 新增：`migrate_from_jsonl(jsonl_path) → int`（迁移行数）
-- 迁移脚本：读取现有 JSONL，每行解析后写入 DuckDB，写完后备份为 `.bak`
-
-### Step 2：修改展示层
-
-**修改文件**：`src/skillr/router.py`
-
-- `format_match_results_for_display()` 调用 `get_skill_selection_count()` 读取每个 skill 的选择次数
-- 签名：`get_skill_selection_count(skill_name, days=30) → int | None`
-- 展示格式：`已被选 X 次（近30天）`
-- 窗口内0次的不显示次数
-
-**修改文件**：`skills/skillr/SKILL.md`
-
-- 结果展示示例更新为带次数版本
-
-### Step 3：测试
-
-**修改文件**：`tests/test_history.py`
-
-- 改造 `TestSelectionHistoryStore`（改 DuckDB 底层）
-- 新增 `TestGetSkillSelectionCount`：
-  - `test_returns_count_within_window()`
-  - `test_returns_none_when_zero()`
-  - `test_different_windows_return_different_counts()`
-  - `test_migrate_from_jsonl_preserves_data()`
-
-### Step 4：更新文档
-
-- `CHANGELOG.md` 记录迁移和 Phase 1.5
+所有 Step 已完成（见上方 Phase 1 迁移计划 + Phase 1.5 展示层修改）。
 
 ---
 
