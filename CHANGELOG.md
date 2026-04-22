@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-22
+
+### Added (E4)
+- `rust-scanner/` crate: high-performance skill index scanner in pure Rust
+- `skillr-core` CLI binary with 5 subcommands: `scan`, `cache-get`, `cache-set`, `config-get`, `index-get`
+- Atomic index/cache writes via POSIX `rename` (ADV-001)
+- HMAC-SHA256 cache integrity verification (ADV-007)
+- SKILL.md YAML frontmatter parsing with per-file mtime tracking
+- `tests/test_rust_cli.py` — 13 integration tests for all subcommands
+- Rust best practices review: clippy clean, `#[deny(missing_docs)]`, normalized test naming
+
 ## [0.1.8] - 2026-04-22
 
 ### Added (E3)
