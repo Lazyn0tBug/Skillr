@@ -94,3 +94,15 @@ class IntentCache(BaseModel):
         default_factory=dict,
         description="Cache entries keyed by intent_hash",
     )
+
+
+class SelectionRecord(BaseModel):
+    """A single user selection event for selection history tracking."""
+
+    intent_hash: str = Field(description="SHA256 hash of the original intent text")
+    selected_skill: str = Field(description="Name of the skill the user selected")
+    rejected_skills: list[str] = Field(
+        default_factory=list,
+        description="Names of skills that were offered but not selected",
+    )
+    timestamp: str = Field(description="ISO timestamp when selection was made")

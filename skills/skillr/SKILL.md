@@ -90,7 +90,9 @@ Example:
    - If `N` (or `n`, `否`, `取消`): return to current list
    - If anything else: ask again
 
-6. **Command Output** — After confirmation, skillr outputs only the command string(s), with format determined automatically by each skill's type:
+6. **Record Selection History** — Call `record_selection_history(user_task, selected_skill_name, rejected_skill_names)`. This is non-blocking (failures are silently ignored). The history data is stored locally at `${CLAUDE_PLUGIN_DATA}/selection_history.jsonl`.
+
+7. **Command Output** — After confirmation, skillr outputs only the command string(s), with format determined automatically by each skill's type:
 
    **For skills with slash command (single selection):**
    ```

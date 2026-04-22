@@ -11,6 +11,7 @@ from .matcher import build_matcher_prompt
 from .models import IntentSpec, MatchResult, SkillMeta
 
 if TYPE_CHECKING:
+    from .history import SelectionHistoryStore
     from .vectors import EmbeddingStore
 
 
@@ -290,3 +291,33 @@ def cache_match_results(
 
     store = _get_cache_store()
     store.set(intent_hash, skill_ids_hash, match_results)
+
+
+# === Selection history (E5) ===
+
+_history_store: SelectionHistoryStore | None = None
+
+
+def _get_history_store() -> SelectionHistoryStore:
+    """Lazily initialize the selection history store."""
+    global _history_store
+    if _history_store is None:
+        from .history import SelectionHistoryStore
+
+        _history_store = SelectionHistoryStore()
+    return _history_store
+
+
+def record_selection_history(
+    user_task: str,
+    selected_skill: str,
+    rejected_skills: list[str] | None = None,
+) -> None:
+    """Record a user skill selection to the history store.
+
+    Called from SKILL.md after the user confirms their selection.
+    Non-blocking — write failures are silently ignored.
+    """
+    intent_hash = IntentCacheStore.hash_intent(user_task)
+    store = _get_history_store()
+    store.record_selection(intent_hash, selected_skill, rejected_skills)
