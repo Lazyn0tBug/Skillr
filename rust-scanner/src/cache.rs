@@ -89,7 +89,7 @@ pub fn save_cache(
     cache_with_sig.signature = sig;
 
     let tmp_path = cache_path.with_extension("json.tmp");
-    let json = serde_json::to_string_pretty(&cache_with_sig)?;
+    let json = serde_json::to_string(&cache_with_sig)?;
 
     // Write and sync
     fs::write(&tmp_path, &json)?;
