@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-22
+
+### Changed (E4 Performance)
+
+- P0: `serde_json::to_string_pretty` → `serde_json::to_string` — compact JSON serialization, 30-40% faster writes
+- P1: `extract_frontmatter_fast()` — O(n) line-scan parser for 3 fixed frontmatter fields (name, description, has_slash_command). Falls back to `serde_yaml` on parse failure. Skips full YAML tokenize overhead
+- P2: `scan_skills_dir_incremental()` — mtime comparison skips YAML parsing entirely for unchanged files. Only parses files whose mtime has changed
+- New tests: incremental scan skip/parse, fast frontmatter parser
+
 ## [0.2.0] - 2026-04-22
 
 ### Added (E4)
