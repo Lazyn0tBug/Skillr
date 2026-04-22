@@ -189,7 +189,8 @@ def format_match_results_for_display(
     for i, result in enumerate(batch_results, start=start_idx + 1):
         skill = skills_map.get(result.name)
         skill_name = skill.name if skill else result.name
-        lines.append(f"{i}. `/{skill_name}` — 理由: {result.match_reason}")
+        selection_text = _format_selection_count(skill_name)
+        lines.append(f"{i}. `/{skill_name}`{selection_text} — 理由: {result.match_reason}")
 
     lines.append("")
 
@@ -321,6 +322,17 @@ def record_selection_history(
     intent_hash = IntentCacheStore.hash_intent(user_task)
     store = _get_history_store()
     store.record_selection(intent_hash, selected_skill, rejected_skills)
+
+
+def _format_selection_count(skill_name: str, days: int = 30) -> str:
+    """Return the selection count annotation for a skill, or empty string if none.
+
+    E5 Phase 1.5: displays "已被选 X 次（近30天）" next to each skill result.
+    """
+    count = get_skill_selection_count(skill_name, days)
+    if count is None or count == 0:
+        return ""
+    return f" (已被选 {count} 次)"
 
 
 def get_skill_selection_count(skill_name: str, days: int = 30) -> int | None:

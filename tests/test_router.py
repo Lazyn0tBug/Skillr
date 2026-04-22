@@ -265,3 +265,55 @@ class TestColdStartGuidance:
         assert "未找到匹配的 Skills" in result
         assert "还没有配置任何 Skills" in result
         assert "SKILL.md" in result
+
+
+class TestSelectionCountDisplay:
+    """E5 Phase 1.5: verify selection counts appear in formatted output."""
+
+    def test_selection_count_shown_when_nonzero(self, mocker):
+        """When a skill has selections in the window, show the count."""
+        mocker.patch(
+            "skillr.router.get_skill_selection_count",
+            return_value=12,
+        )
+        results = [
+            MatchResult(name="drawio", score=0.9, match_reason="Good match"),
+        ]
+        skills_map = {
+            "drawio": SkillMeta(name="drawio", description="desc", file_path=Path("/p")),
+        }
+        output = format_match_results_for_display(results, skills_map)
+        assert "已被选 12 次" in output
+
+    def test_selection_count_not_shown_when_zero(self, mocker):
+        """When a skill has zero selections, don't show the count."""
+        mocker.patch(
+            "skillr.router.get_skill_selection_count",
+            return_value=None,
+        )
+        results = [
+            MatchResult(name="drawio", score=0.9, match_reason="Good match"),
+        ]
+        skills_map = {
+            "drawio": SkillMeta(name="drawio", description="desc", file_path=Path("/p")),
+        }
+        output = format_match_results_for_display(results, skills_map)
+        assert "已被选" not in output
+
+    def test_selection_count_per_skill(self, mocker):
+        """Each skill shows its own selection count independently."""
+        mocker.patch(
+            "skillr.router.get_skill_selection_count",
+            side_effect=lambda name, days=30: 5 if name == "drawio" else 2,
+        )
+        results = [
+            MatchResult(name="drawio", score=0.9, match_reason="Match"),
+            MatchResult(name="miro", score=0.7, match_reason="Also match"),
+        ]
+        skills_map = {
+            "drawio": SkillMeta(name="drawio", description="desc", file_path=Path("/p1")),
+            "miro": SkillMeta(name="miro", description="desc", file_path=Path("/p2")),
+        }
+        output = format_match_results_for_display(results, skills_map)
+        assert "已被选 5 次" in output
+        assert "已被选 2 次" in output
