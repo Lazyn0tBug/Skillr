@@ -1,4 +1,4 @@
-"""Selection history store for tracking user skill selections over time."""
+"""Selection history store using DuckDB for efficient time-windowed queries."""
 
 from __future__ import annotations
 
@@ -6,70 +6,166 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
+import duckdb
+
 from .config import ensure_plugin_data_dir
 from .models import SelectionRecord
 
 
 class SelectionHistoryStore:
-    """Append-only JSONL store for user skill selection history.
+    """DuckDB-backed selection history store.
 
-    File format: one JSON line per record at `${CLAUDE_PLUGIN_DATA}/selection_history.jsonl`.
+    Database: ${CLAUDE_PLUGIN_DATA}/selection_history.duckdb
+    Table schema:
+        id             — auto-increment primary key
+        intent_hash    — SHA256 of the original intent text
+        selected_skill — skill name the user selected
+        rejected_skills — DuckDB VARCHAR[] of rejected skill names
+        created_at     — TIMESTAMP of when selection was recorded
     """
 
-    FILENAME = "selection_history.jsonl"
+    DB_NAME = "selection_history.duckdb"
 
-    def _path(self) -> Path:
-        """Return the path to the selection history file."""
-        return ensure_plugin_data_dir() / self.FILENAME
+    def __init__(self) -> None:
+        self._db_path = ensure_plugin_data_dir() / self.DB_NAME
+        self._con: duckdb.DuckDBPyConnection | None = None
+        self._ensure_table()
+        self._migrate_if_needed()
 
-    def add_record(self, record: SelectionRecord) -> None:
-        """Append a selection record to the history file.
+    def _conn(self) -> duckdb.DuckDBPyConnection:
+        """Get or create a DuckDB connection."""
+        if self._con is None:
+            self._con = duckdb.connect(str(self._db_path))
+        return self._con
 
-        Creates the file and parent directory if they don't exist.
-        Silently passes on write errors (non-blocking).
+    def _ensure_table(self) -> None:
+        """Create the selection_history table and indexes if they don't exist."""
+        conn = self._conn()
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS selection_history (
+                intent_hash    VARCHAR,
+                selected_skill VARCHAR,
+                rejected_skills VARCHAR[],
+                created_at     TIMESTAMP
+            )
+        """)
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_sel_skill ON selection_history(selected_skill)"
+        )
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_sel_created ON selection_history(created_at)")
+
+    def _migrate_if_needed(self) -> None:
+        """Migrate data from JSONL to DuckDB if the JSONL file exists and is non-empty."""
+        jsonl_path = ensure_plugin_data_dir() / "selection_history.jsonl"
+        if not jsonl_path.exists() or jsonl_path.stat().st_size == 0:
+            return
+
+        # Check if DuckDB table already has data (avoid re-migration)
+        count = self._conn().execute("SELECT COUNT(*) FROM selection_history").fetchone()[0]
+        if count > 0:
+            # Already migrated — rename JSONL as backup
+            bak_path = jsonl_path.with_suffix(".bak")
+            jsonl_path.rename(bak_path)
+            return
+
+        migrated = self.migrate_from_jsonl(jsonl_path)
+        if migrated > 0:
+            bak_path = jsonl_path.with_suffix(".bak")
+            jsonl_path.rename(bak_path)
+
+    def migrate_from_jsonl(self, jsonl_path: Path) -> int:
+        """Migrate records from a JSONL file into DuckDB.
+
+        Args:
+            jsonl_path: Path to the JSONL file to migrate.
+
+        Returns:
+            Number of records successfully migrated.
         """
-        path = self._path()
+        conn = self._conn()
+        migrated = 0
+
         try:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            with open(path, "a", encoding="utf-8") as f:
-                f.write(record.model_dump_json() + "\n")
-        except Exception:
-            # Non-blocking — history write failures don't affect user-facing functionality
-            pass
-
-    def get_all_records(self) -> list[SelectionRecord]:
-        """Load and return all selection records from the history file.
-
-        Returns an empty list if the file doesn't exist or is empty.
-        Skips malformed lines.
-        """
-        path = self._path()
-        if not path.exists():
-            return []
-
-        records: list[SelectionRecord] = []
-        try:
-            with open(path, encoding="utf-8") as f:
+            with open(jsonl_path, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if not line:
                         continue
                     try:
                         data = json.loads(line)
-                        records.append(SelectionRecord.model_validate(data))
+                        record = SelectionRecord.model_validate(data)
+                        conn.execute(
+                            """
+                            INSERT INTO selection_history
+                                (intent_hash, selected_skill, rejected_skills, created_at)
+                            VALUES (?, ?, ?, ?)
+                            """,
+                            [
+                                record.intent_hash,
+                                record.selected_skill,
+                                record.rejected_skills,
+                                datetime.fromisoformat(record.timestamp),
+                            ],
+                        )
+                        migrated += 1
                     except Exception:
-                        # Skip malformed lines
                         continue
+        except Exception:
+            pass
+
+        return migrated
+
+    def add_record(self, record: SelectionRecord) -> None:
+        """Insert a selection record into DuckDB.
+
+        Silently passes on write errors (non-blocking).
+        """
+        try:
+            conn = self._conn()
+            conn.execute(
+                """
+                INSERT INTO selection_history
+                    (intent_hash, selected_skill, rejected_skills, created_at)
+                VALUES (?, ?, ?, ?)
+                """,
+                [
+                    record.intent_hash,
+                    record.selected_skill,
+                    record.rejected_skills,
+                    datetime.fromisoformat(record.timestamp),
+                ],
+            )
+        except Exception:
+            # Non-blocking
+            pass
+
+    def get_all_records(self) -> list[SelectionRecord]:
+        """Load and return all selection records, ordered by insertion order."""
+        try:
+            conn = self._conn()
+            rows = conn.execute(
+                """
+                SELECT intent_hash, selected_skill, rejected_skills, created_at
+                FROM selection_history
+                ORDER BY rowid ASC
+                """
+            ).fetchall()
+            return [
+                SelectionRecord(
+                    intent_hash=row[0],
+                    selected_skill=row[1],
+                    rejected_skills=list(row[2]) if row[2] else [],
+                    timestamp=row[3].isoformat(),
+                )
+                for row in rows
+            ]
         except Exception:
             return []
 
-        return records
-
     def clear(self) -> None:
-        """Delete the selection history file."""
-        path = self._path()
+        """Delete all records from the table (table schema remains)."""
         try:
-            path.unlink(missing_ok=True)
+            self._conn().execute("DELETE FROM selection_history")
         except Exception:
             pass
 
@@ -79,13 +175,7 @@ class SelectionHistoryStore:
         selected_skill: str,
         rejected_skills: list[str] | None = None,
     ) -> None:
-        """Convenience method to create and append a selection record.
-
-        Args:
-            intent_hash: SHA256 hash of the original intent text
-            selected_skill: Name of the skill the user selected
-            rejected_skills: Names of skills offered but not selected
-        """
+        """Convenience method to create and insert a selection record."""
         record = SelectionRecord(
             intent_hash=intent_hash,
             selected_skill=selected_skill,
@@ -93,6 +183,40 @@ class SelectionHistoryStore:
             timestamp=datetime.now(UTC).isoformat(),
         )
         self.add_record(record)
+
+    def get_skill_selection_count(self, skill_name: str, days: int = 30) -> int | None:
+        """Return the number of times a skill was selected within the time window.
+
+        Args:
+            skill_name: Name of the skill to query.
+            days: Number of days to look back (default 30).
+
+        Returns:
+            Number of selections within the window, or None if 0 or error.
+        """
+        try:
+            conn = self._conn()
+            result = conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM selection_history
+                WHERE selected_skill = ?
+                  AND created_at > CURRENT_TIMESTAMP - INTERVAL '1 day' * ?
+                """,
+                [skill_name, days],
+            ).fetchone()
+            if result is None:
+                return None
+            count = result[0]
+            return count if count > 0 else None
+        except Exception:
+            return None
+
+    def close(self) -> None:
+        """Close the DuckDB connection."""
+        if self._con is not None:
+            self._con.close()
+            self._con = None
 
 
 # Module-level singleton

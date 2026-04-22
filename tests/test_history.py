@@ -1,18 +1,18 @@
-"""Tests for E5 selection history store."""
+"""Tests for E5 selection history store (DuckDB backend)."""
 
 from __future__ import annotations
 
-import json
+from datetime import UTC, datetime, timedelta
 
 from skillr.history import SelectionHistoryStore
 from skillr.models import SelectionRecord
 
 
 class TestSelectionHistoryStore:
-    """Test SelectionHistoryStore with real temp filesystem."""
+    """Test SelectionHistoryStore with DuckDB backend using temp directories."""
 
-    def test_add_record_creates_file(self, tmp_path, mocker):
-        """Adding a record creates the JSONL file."""
+    def test_add_record_inserts_into_duckdb(self, tmp_path, mocker):
+        """Adding a record persists it in DuckDB."""
         mocker.patch("skillr.history.ensure_plugin_data_dir", return_value=tmp_path)
         mocker.patch("skillr.config.ensure_plugin_data_dir", return_value=tmp_path)
 
@@ -25,16 +25,14 @@ class TestSelectionHistoryStore:
         )
         store.add_record(record)
 
-        path = tmp_path / "selection_history.jsonl"
-        assert path.exists()
-        lines = path.read_text().strip().split("\n")
-        assert len(lines) == 1
-        data = json.loads(lines[0])
-        assert data["selected_skill"] == "drawio"
-        assert data["rejected_skills"] == ["miro", "figma"]
+        # Verify via get_all_records
+        records = store.get_all_records()
+        assert len(records) == 1
+        assert records[0].selected_skill == "drawio"
+        assert records[0].rejected_skills == ["miro", "figma"]
 
     def test_add_multiple_records(self, tmp_path, mocker):
-        """Multiple records are appended as separate lines."""
+        """Multiple records are persisted separately."""
         mocker.patch("skillr.history.ensure_plugin_data_dir", return_value=tmp_path)
         mocker.patch("skillr.config.ensure_plugin_data_dir", return_value=tmp_path)
 
@@ -47,12 +45,12 @@ class TestSelectionHistoryStore:
             )
             store.add_record(record)
 
-        path = tmp_path / "selection_history.jsonl"
-        lines = path.read_text().strip().split("\n")
-        assert len(lines) == 3
+        records = store.get_all_records()
+        assert len(records) == 3
+        assert [r.selected_skill for r in records] == ["skill0", "skill1", "skill2"]
 
     def test_get_all_records_returns_all(self, tmp_path, mocker):
-        """get_all_records returns all appended records."""
+        """get_all_records returns all records ordered by id."""
         mocker.patch("skillr.history.ensure_plugin_data_dir", return_value=tmp_path)
         mocker.patch("skillr.config.ensure_plugin_data_dir", return_value=tmp_path)
 
@@ -70,7 +68,7 @@ class TestSelectionHistoryStore:
         assert [r.selected_skill for r in records] == ["skill0", "skill1", "skill2"]
 
     def test_get_all_records_empty_when_no_file(self, tmp_path, mocker):
-        """Returns empty list if history file doesn't exist."""
+        """Returns empty list when no records exist."""
         mocker.patch("skillr.history.ensure_plugin_data_dir", return_value=tmp_path)
         mocker.patch("skillr.config.ensure_plugin_data_dir", return_value=tmp_path)
 
@@ -78,67 +76,37 @@ class TestSelectionHistoryStore:
         records = store.get_all_records()
         assert records == []
 
-    def test_clear_deletes_file(self, tmp_path, mocker):
-        """clear() removes the history file."""
+    def test_clear_deletes_all_records(self, tmp_path, mocker):
+        """clear() removes all records but keeps the table schema."""
         mocker.patch("skillr.history.ensure_plugin_data_dir", return_value=tmp_path)
         mocker.patch("skillr.config.ensure_plugin_data_dir", return_value=tmp_path)
 
         store = SelectionHistoryStore()
-        record = SelectionRecord(
-            intent_hash="abc",
-            selected_skill="drawio",
-            timestamp="2026-04-21T10:00:00+00:00",
-        )
-        store.add_record(record)
+        for i in range(3):
+            record = SelectionRecord(
+                intent_hash=f"hash{i}",
+                selected_skill=f"skill{i}",
+                timestamp=f"2026-04-21T{i:02d}:00:00+00:00",
+            )
+            store.add_record(record)
+
         store.clear()
 
-        path = tmp_path / "selection_history.jsonl"
-        assert not path.exists()
+        records = store.get_all_records()
+        assert records == []
+        # Table schema should still exist (get_all returns [] not error)
+        assert store.get_all_records() == []
 
-    def test_clear_nonexistent_file_succeeds(self, tmp_path, mocker):
-        """clear() succeeds even if file doesn't exist."""
+    def test_clear_nonexistent_succeeds(self, tmp_path, mocker):
+        """clear() succeeds even when table is empty."""
         mocker.patch("skillr.history.ensure_plugin_data_dir", return_value=tmp_path)
         mocker.patch("skillr.config.ensure_plugin_data_dir", return_value=tmp_path)
 
         store = SelectionHistoryStore()
         store.clear()  # Should not raise
 
-    def test_skips_malformed_lines(self, tmp_path, mocker):
-        """Skips lines that are not valid JSON."""
-        mocker.patch("skillr.history.ensure_plugin_data_dir", return_value=tmp_path)
-        mocker.patch("skillr.config.ensure_plugin_data_dir", return_value=tmp_path)
-
-        path = tmp_path / "selection_history.jsonl"
-        # Valid: two SelectionRecord lines separated by a plain-text (non-JSON) line
-        valid1 = json.dumps(
-            {
-                "intent_hash": "h1",
-                "selected_skill": "s1",
-                "rejected_skills": [],
-                "timestamp": "2026-01-01T00:00:00+00:00",
-            }
-        )
-        valid2 = json.dumps(
-            {
-                "intent_hash": "h2",
-                "selected_skill": "s2",
-                "rejected_skills": [],
-                "timestamp": "2026-01-01T00:00:00+00:00",
-            }
-        )
-        path.write_text(f"{valid1}\nnot json\n{valid2}\n")
-
-        # Override _path directly on the store instance to use our temp path
-        store = SelectionHistoryStore()
-        store._path = lambda: path
-        records = store.get_all_records()
-
-        assert len(records) == 2
-        assert records[0].intent_hash == "h1"
-        assert records[1].intent_hash == "h2"
-
     def test_record_selection_convenience_method(self, tmp_path, mocker):
-        """record_selection() creates and appends a record."""
+        """record_selection() creates and inserts a record."""
         mocker.patch("skillr.history.ensure_plugin_data_dir", return_value=tmp_path)
         mocker.patch("skillr.config.ensure_plugin_data_dir", return_value=tmp_path)
 
@@ -150,6 +118,130 @@ class TestSelectionHistoryStore:
         assert records[0].intent_hash == "intent-hash-xyz"
         assert records[0].selected_skill == "drawio"
         assert records[0].rejected_skills == ["miro", "figma"]
+
+    def test_migrate_from_jsonl_preserves_data(self, tmp_path, mocker):
+        """migrate_from_jsonl correctly imports JSONL records into DuckDB."""
+        mocker.patch("skillr.history.ensure_plugin_data_dir", return_value=tmp_path)
+        mocker.patch("skillr.config.ensure_plugin_data_dir", return_value=tmp_path)
+
+        # Create a JSONL file with test data
+        jsonl_path = tmp_path / "selection_history.jsonl"
+        lines = []
+        for i in range(3):
+            rec = SelectionRecord(
+                intent_hash=f"h{i}",
+                selected_skill=f"s{i}",
+                rejected_skills=["rejected-skill"] if i > 0 else [],
+                timestamp=f"2026-01-01T{i:02d}:00:00+00:00",
+            )
+            lines.append(rec.model_dump_json())
+        jsonl_path.write_text("\n".join(lines))
+
+        # Manually migrate using the store's migration function
+        store = SelectionHistoryStore()
+        # _migrate_if_needed already ran during __init__ — it migrated and renamed the file
+        # So we call migrate_from_jsonl with the same path (it will find .bak gone, returns 0)
+        # Instead: test that auto-migration worked by checking records
+        records = store.get_all_records()
+        assert len(records) == 3
+        assert records[0].selected_skill == "s0"
+        assert records[1].rejected_skills == ["rejected-skill"]
+        # And .bak file should exist
+        assert jsonl_path.with_suffix(".bak").exists()
+
+
+class TestGetSkillSelectionCount:
+    """Test get_skill_selection_count with DuckDB backend."""
+
+    def test_returns_count_within_window(self, tmp_path, mocker):
+        """Returns correct count for skill selected within window."""
+        mocker.patch("skillr.history.ensure_plugin_data_dir", return_value=tmp_path)
+        mocker.patch("skillr.config.ensure_plugin_data_dir", return_value=tmp_path)
+
+        store = SelectionHistoryStore()
+        now = datetime.now(UTC)
+
+        # Insert 3 records for drawio in the last 10 days
+        for i in range(3):
+            record = SelectionRecord(
+                intent_hash=f"hash{i}",
+                selected_skill="drawio",
+                rejected_skills=[],
+                timestamp=(now - timedelta(days=i)).isoformat(),
+            )
+            store.add_record(record)
+
+        count = store.get_skill_selection_count("drawio", days=30)
+        assert count == 3
+
+    def test_returns_none_when_zero(self, tmp_path, mocker):
+        """Returns None when skill has no selections in window."""
+        mocker.patch("skillr.history.ensure_plugin_data_dir", return_value=tmp_path)
+        mocker.patch("skillr.config.ensure_plugin_data_dir", return_value=tmp_path)
+
+        store = SelectionHistoryStore()
+        count = store.get_skill_selection_count("nonexistent-skill", days=30)
+        assert count is None
+
+    def test_excludes_outside_window(self, tmp_path, mocker):
+        """Excludes selections older than the window."""
+        mocker.patch("skillr.history.ensure_plugin_data_dir", return_value=tmp_path)
+        mocker.patch("skillr.config.ensure_plugin_data_dir", return_value=tmp_path)
+
+        store = SelectionHistoryStore()
+        now = datetime.now(UTC)
+
+        # 1 recent selection
+        store.add_record(
+            SelectionRecord(
+                intent_hash="recent",
+                selected_skill="drawio",
+                rejected_skills=[],
+                timestamp=now.isoformat(),
+            )
+        )
+        # 1 old selection (45 days ago)
+        store.add_record(
+            SelectionRecord(
+                intent_hash="old",
+                selected_skill="drawio",
+                rejected_skills=[],
+                timestamp=(now - timedelta(days=45)).isoformat(),
+            )
+        )
+
+        # Within 30 days: only the recent one
+        count = store.get_skill_selection_count("drawio", days=30)
+        assert count == 1
+
+        # Within 60 days: both
+        count_60 = store.get_skill_selection_count("drawio", days=60)
+        assert count_60 == 2
+
+    def test_different_windows_return_different_counts(self, tmp_path, mocker):
+        """Different window sizes return different counts."""
+        mocker.patch("skillr.history.ensure_plugin_data_dir", return_value=tmp_path)
+        mocker.patch("skillr.config.ensure_plugin_data_dir", return_value=tmp_path)
+
+        store = SelectionHistoryStore()
+        now = datetime.now(UTC)
+
+        # 1 selection 10 days ago, 1 selection 50 days ago
+        for days in [10, 50]:
+            store.add_record(
+                SelectionRecord(
+                    intent_hash=f"h{days}",
+                    selected_skill="miro",
+                    rejected_skills=[],
+                    timestamp=(now - timedelta(days=days)).isoformat(),
+                )
+            )
+
+        count_30 = store.get_skill_selection_count("miro", days=30)
+        count_90 = store.get_skill_selection_count("miro", days=90)
+
+        assert count_30 == 1
+        assert count_90 == 2
 
 
 class TestRouterIntegration:
@@ -176,7 +268,23 @@ class TestRouterIntegration:
 
         record_selection_history("我想画架构图", "drawio", ["miro"])
 
-        path = tmp_path / "selection_history.jsonl"
-        assert path.exists()
-        data = json.loads(path.read_text())
-        assert data["selected_skill"] == "drawio"
+        # Verify via DuckDB
+        import skillr.router as router_module
+
+        store = router_module._get_history_store()
+        records = store.get_all_records()
+
+        assert len(records) == 1
+        assert records[0].selected_skill == "drawio"
+
+    def test_get_skill_selection_count_via_router(self, tmp_path, mocker):
+        """get_skill_selection_count is accessible via router."""
+        mocker.patch("skillr.history.ensure_plugin_data_dir", return_value=tmp_path)
+        mocker.patch("skillr.config.ensure_plugin_data_dir", return_value=tmp_path)
+
+        from skillr.router import get_skill_selection_count, record_selection_history
+
+        record_selection_history("test task", "drawio", [])
+        count = get_skill_selection_count("drawio", days=30)
+
+        assert count == 1

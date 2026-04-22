@@ -321,3 +321,13 @@ def record_selection_history(
     intent_hash = IntentCacheStore.hash_intent(user_task)
     store = _get_history_store()
     store.record_selection(intent_hash, selected_skill, rejected_skills)
+
+
+def get_skill_selection_count(skill_name: str, days: int = 30) -> int | None:
+    """Return the number of times a skill was selected within the time window.
+
+    Called from format_match_results_for_display to show selection counts.
+    Returns None if count is 0 or on error.
+    """
+    store = _get_history_store()
+    return store.get_skill_selection_count(skill_name, days)
