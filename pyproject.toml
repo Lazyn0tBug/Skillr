@@ -5,7 +5,7 @@ description = "Skill routing framework for Claude Code — find the right Skill 
 requires-python = ">=3.11"
 dependencies = [
     "pyyaml>=6.0",
-    "pydantic>=2.0",
+    "pydantic>=2.13.1",
     "chromadb>=1.5.8",
     "fastembed>=0.8.0",
     "transformers>=5.5.4",
@@ -17,13 +17,13 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "ty>=0.0.1a8",
-    "ruff>=0.4.0",
+    "ty>=0.0.32",
+    "ruff>=0.15.0",
     "pre-commit>=3.0",
-    "pytest>=8.0",
-    "pytest-cov>=4.0",
-    "pytest-benchmark>=4.0",
-    "pytest-mock>=3.0",
+    "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
+    "pytest-benchmark>=5.2.3",
+    "pytest-mock>=3.15.1",
 ]
 
 [build-system]
