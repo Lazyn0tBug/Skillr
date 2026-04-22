@@ -67,7 +67,32 @@ def build_matcher_prompt_for_intent(
     top_k: int = 5,
 ) -> str:
     """Build the LLM prompt for filtering and ranking skills against an intent."""
-    return build_matcher_prompt(skills, intent, top_k)
+    history_context = _build_history_context(skills, days=30)
+    return build_matcher_prompt(skills, intent, top_k, history_context)
+
+
+def _build_history_context(skills: list[SkillMeta], days: int = 30) -> str:
+    """Build a history context string for E5 Phase 2 ranking signals.
+
+    Injects per-skill selection counts into the prompt to bias LLM ranking
+    toward historically popular skills.
+    """
+    if not skills:
+        return ""
+
+    skill_names = [s.name for s in skills]
+    stats = _get_history_store().get_skill_stats(skill_names, days)
+
+    # Only include skills that have been selected at least once
+    selected = {name: count for name, count in stats.items() if count > 0}
+    if not selected:
+        return ""
+
+    entries = [
+        f"  - {name}: 近{days}天被选 {count} 次"
+        for name, count in sorted(selected.items(), key=lambda x: -x[1])
+    ]
+    return "参考（用户历史选择偏好）：\n" + "\n".join(entries)
 
 
 # === Vector-aware filtering (E3) ===

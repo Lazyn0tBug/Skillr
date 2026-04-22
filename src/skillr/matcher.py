@@ -15,6 +15,8 @@ FILTER_AND_RANK_PROMPT_TEMPLATE = """
 候选 Skills（JSON 数组）：
 {skills_json}
 
+{history_context}
+
 用户意图：{intent}
 约束条件：{constraints}
 关键词：{keywords}
@@ -33,14 +35,18 @@ def build_matcher_prompt(
     skills: list[SkillMeta],
     intent: IntentSpec,
     top_k: int = 5,
+    history_context: str = "",
 ) -> str:
     """Generate the filter + rank prompt for the main session LLM."""
     skills_json = json.dumps(
         [{"name": s.name, "description": s.description} for s in skills],
         ensure_ascii=False,
     )
+    if history_context:
+        history_context = f"\n{history_context}\n"
     return FILTER_AND_RANK_PROMPT_TEMPLATE.format(
         skills_json=skills_json,
+        history_context=history_context,
         intent=intent.intent,
         constraints=", ".join(intent.constraints) if intent.constraints else "无",
         keywords=", ".join(intent.keywords),

@@ -215,6 +215,38 @@ class SelectionHistoryStore:
             # Non-blocking — return None rather than expose errors to caller
             return None
 
+    def get_skill_stats(self, skill_names: list[str], days: int = 30) -> dict[str, int]:
+        """Return selection counts for multiple skills within the time window.
+
+        Args:
+            skill_names: List of skill names to query.
+            days: Number of days to look back (default 30).
+
+        Returns:
+            Dict mapping skill_name -> selection count (0 if not found or error).
+        """
+        if not skill_names:
+            return {}
+        # Initialize all skills to 0 (handles unselected skills not in query result)
+        result: dict[str, int] = {name: 0 for name in skill_names}
+        try:
+            conn = self._conn()
+            rows = conn.execute(
+                """
+                SELECT selected_skill, COUNT(*)
+                FROM selection_history
+                WHERE selected_skill IN ({placeholders})
+                  AND created_at > CURRENT_TIMESTAMP - INTERVAL '1 day' * ?
+                GROUP BY selected_skill
+                """.format(placeholders=", ".join("?" for _ in skill_names)),
+                [*skill_names, days],
+            ).fetchall()
+            for row in rows:
+                result[row[0]] = row[1]
+            return result
+        except Exception:
+            return {name: 0 for name in skill_names}
+
     def close(self) -> None:
         """Close the DuckDB connection."""
         if self._con is not None:

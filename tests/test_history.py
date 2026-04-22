@@ -288,3 +288,58 @@ class TestRouterIntegration:
         count = get_skill_selection_count("drawio", days=30)
 
         assert count == 1
+
+
+class TestGetSkillStats:
+    """Test get_skill_stats for E5 Phase 2 batch aggregation."""
+
+    def test_returns_counts_for_multiple_skills(self, tmp_path, mocker):
+        """Returns selection counts for multiple skills in one call."""
+        mocker.patch("skillr.history.ensure_plugin_data_dir", return_value=tmp_path)
+        mocker.patch("skillr.config.ensure_plugin_data_dir", return_value=tmp_path)
+
+        store = SelectionHistoryStore()
+        now = datetime.now(UTC)
+        for i, skill in enumerate(["drawio", "miro", "figma"]):
+            store.add_record(
+                SelectionRecord(
+                    intent_hash=f"h{i}",
+                    selected_skill=skill,
+                    rejected_skills=[],
+                    timestamp=now.isoformat(),
+                )
+            )
+
+        stats = store.get_skill_stats(["drawio", "miro", "figma", "nonexistent"], days=30)
+        assert stats["drawio"] == 1
+        assert stats["miro"] == 1
+        assert stats["figma"] == 1
+        assert stats["nonexistent"] == 0
+
+    def test_empty_skill_list(self, tmp_path, mocker):
+        """Returns empty dict when given no skills."""
+        mocker.patch("skillr.history.ensure_plugin_data_dir", return_value=tmp_path)
+        mocker.patch("skillr.config.ensure_plugin_data_dir", return_value=tmp_path)
+
+        store = SelectionHistoryStore()
+        stats = store.get_skill_stats([], days=30)
+        assert stats == {}
+
+    def test_skills_not_selected_return_zero(self, tmp_path, mocker):
+        """Skills with no selections return 0 in the dict."""
+        mocker.patch("skillr.history.ensure_plugin_data_dir", return_value=tmp_path)
+        mocker.patch("skillr.config.ensure_plugin_data_dir", return_value=tmp_path)
+
+        store = SelectionHistoryStore()
+        store.add_record(
+            SelectionRecord(
+                intent_hash="h1",
+                selected_skill="drawio",
+                rejected_skills=[],
+                timestamp=datetime.now(UTC).isoformat(),
+            )
+        )
+
+        stats = store.get_skill_stats(["drawio", "miro"], days=30)
+        assert stats["drawio"] == 1
+        assert stats["miro"] == 0

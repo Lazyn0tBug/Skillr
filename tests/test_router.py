@@ -317,3 +317,52 @@ class TestSelectionCountDisplay:
         output = format_match_results_for_display(results, skills_map)
         assert "已被选 5 次" in output
         assert "已被选 2 次" in output
+
+
+class TestBuildMatcherPromptWithHistory:
+    """E5 Phase 2: history context injected into matcher prompt."""
+
+    def test_history_context_injected(self, mocker):
+        """When skills have selection history, context is injected into prompt."""
+        from skillr.models import IntentSpec
+        from skillr.router import build_matcher_prompt_for_intent
+
+        mock_store = mocker.MagicMock()
+        mock_store.get_skill_stats.return_value = {"drawio": 5, "miro": 2}
+        mocker.patch("skillr.router._get_history_store", return_value=mock_store)
+
+        intent = IntentSpec(
+            original_task="draw architecture",
+            intent="draw architecture",
+            constraints=[],
+            keywords=["diagram"],
+        )
+        skills = [
+            SkillMeta(name="drawio", description="Draw diagrams", file_path=Path("/p1")),
+            SkillMeta(name="miro", description="Collaborative whiteboard", file_path=Path("/p2")),
+        ]
+        prompt = build_matcher_prompt_for_intent(skills, intent, top_k=5)
+
+        assert "参考（用户历史选择偏好）" in prompt
+        assert "drawio: 近30天被选 5 次" in prompt
+        assert "miro: 近30天被选 2 次" in prompt
+
+    def test_no_history_context_when_no_selections(self, mocker):
+        """When no skills have selection history, context is empty."""
+        from skillr.models import IntentSpec
+        from skillr.router import build_matcher_prompt_for_intent
+
+        mock_store = mocker.MagicMock()
+        mock_store.get_skill_stats.return_value = {}
+        mocker.patch("skillr.router._get_history_store", return_value=mock_store)
+
+        intent = IntentSpec(
+            original_task="test task", intent="test", constraints=[], keywords=["test"]
+        )
+        skills = [
+            SkillMeta(name="drawio", description="desc", file_path=Path("/p1")),
+        ]
+        prompt = build_matcher_prompt_for_intent(skills, intent, top_k=5)
+
+        assert "参考（用户历史选择偏好）" not in prompt
+        assert "近30天" not in prompt
