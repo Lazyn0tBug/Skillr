@@ -11,7 +11,6 @@ from .matcher import build_matcher_prompt
 from .models import IntentSpec, MatchResult, SkillMeta
 
 if TYPE_CHECKING:
-    from .history import SelectionHistoryStore
     from .vectors import EmbeddingStore
 
 
@@ -214,6 +213,9 @@ def format_match_results_for_display(
     for i, result in enumerate(batch_results, start=start_idx + 1):
         skill = skills_map.get(result.name)
         skill_name = skill.name if skill else result.name
+        # Guard against empty skill name (malformed LLM response)
+        if not skill_name:
+            continue
         selection_text = _format_selection_count(skill_name)
         lines.append(f"{i}. `/{skill_name}`{selection_text} — 理由: {result.match_reason}")
 
@@ -321,17 +323,12 @@ def cache_match_results(
 
 # === Selection history (E5) ===
 
-_history_store: SelectionHistoryStore | None = None
 
+# Router delegates to history module's singleton (avoids duplicate definition)
+def _get_history_store():
+    from .history import _get_history_store as _get
 
-def _get_history_store() -> SelectionHistoryStore:
-    """Lazily initialize the selection history store."""
-    global _history_store
-    if _history_store is None:
-        from .history import SelectionHistoryStore
-
-        _history_store = SelectionHistoryStore()
-    return _history_store
+    return _get()
 
 
 def record_selection_history(

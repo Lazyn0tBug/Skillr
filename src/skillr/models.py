@@ -94,6 +94,12 @@ class IntentCache(BaseModel):
         default_factory=dict,
         description="Cache entries keyed by intent_hash",
     )
+    # ADV-007: HMAC signature of the cache entries for tampering detection.
+    # Value: HMAC-SHA256(entries_json, machine_secret). Empty on disk cache v1.
+    signature: str = Field(
+        default="",
+        description="HMAC-SHA256 signature of entries for integrity verification",
+    )
 
 
 class SelectionRecord(BaseModel):

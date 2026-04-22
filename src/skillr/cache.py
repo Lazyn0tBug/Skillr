@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import os
 import time
@@ -10,12 +11,31 @@ from datetime import UTC, datetime
 
 from pydantic import ValidationError
 
-from .config import ensure_plugin_data_dir
+from .config import ensure_plugin_data_dir, get_cache_secret
 from .models import IntentCache, IntentCacheEntry, MatchResult
 
 
+def _pydantic_encoder(obj):
+    """JSON encoder that handles Pydantic models and datetime."""
+    if hasattr(obj, "model_dump"):
+        return obj.model_dump(mode="json")
+    if hasattr(obj, "isoformat"):
+        return obj.isoformat()
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+
+
 class IntentCacheStore:
-    """Disk-persistent cache for intent matching results with TTL and invalidation."""
+    """Disk-persistent cache for intent matching results with TTL, HMAC integrity, and invalidation.
+
+    Security (ADV-007):
+        Cache entries are signed with HMAC-SHA256 using a machine-specific secret.
+        On load, any tampering (poisoning, corruption) causes the cache to be discarded.
+        The signature protects against other users on shared systems modifying the cache.
+
+    Atomicity (ADV-001):
+        Writes use write-to-tmp + rename. On load, orphaned .tmp files are cleaned up
+        so crash during rename does not permanently corrupt the cache.
+    """
 
     DEFAULT_TTL_SECONDS = 3600  # 1 hour
 
@@ -28,23 +48,65 @@ class IntentCacheStore:
         """Create the cache directory if it doesn't exist."""
         self._cache_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # === Signature helpers ===
+
+    def _sign_entries(self, entries: dict[str, IntentCacheEntry]) -> str:
+        """Compute HMAC-SHA256 signature of cache entries dict."""
+        secret = get_cache_secret()
+        # Canonical JSON: sort_keys ensures deterministic serialization for HMAC
+        entries_json = json.dumps(entries, sort_keys=True, default=_pydantic_encoder)
+        return hmac.new(secret.encode(), entries_json.encode(), hashlib.sha256).hexdigest()
+
+    def _verify_signature(self, entries: dict[str, IntentCacheEntry], signature: str) -> bool:
+        """Verify entries match the stored HMAC signature.
+
+        Empty signature means pre-fix cache (v1.0.0 before ADV-007) — treat as valid.
+        """
+        if not signature:
+            return True  # Pre-existing cache without signature — trust it
+        expected = self._sign_entries(entries)
+        return hmac.compare_digest(expected, signature)
+
+    # === Load / Save ===
+
     def _load_cache(self) -> IntentCache:
         """Load the cache from disk, creating empty cache if file doesn't exist."""
+        tmp_path = self._cache_path.with_suffix(".tmp")
+
+        # ADV-001: Clean up orphaned .tmp from interrupted write.
+        # After a successful rename, .tmp no longer exists. If .tmp exists, the
+        # previous write's rename failed — but .json may still be valid.
+        # - If .json doesn't exist: remove orphaned .tmp, start fresh.
+        # - If .json exists: .tmp is a leftover from a failed rename, remove .tmp only.
+        if tmp_path.exists():
+            if not self._cache_path.exists():
+                tmp_path.unlink()
+            else:
+                tmp_path.unlink()
+
         if not self._cache_path.exists():
             return IntentCache()
 
         try:
             with open(self._cache_path) as f:
                 data = json.load(f)
-            return IntentCache.model_validate(data)
+            cache = IntentCache.model_validate(data)
         except (OSError, json.JSONDecodeError, ValidationError):
-            # Corrupted cache — remove and return empty
             self._remove_cache()
             return IntentCache()
 
+        # ADV-007: Verify HMAC signature — discard if tampered
+        if not self._verify_signature(cache.entries, cache.signature):
+            self._remove_cache()
+            return IntentCache()
+
+        return cache
+
     def _save_cache(self, cache: IntentCache) -> None:
         """Write the cache to disk atomically with fsync for durability."""
-        # Write to temp file then rename for atomicity
+        # ADV-007: Sign entries before writing
+        cache.signature = self._sign_entries(cache.entries)
+
         tmp_path = self._cache_path.with_suffix(".tmp")
         with open(tmp_path, "w") as f:
             json.dump(cache.model_dump(), f, indent=2)
@@ -56,6 +118,8 @@ class IntentCacheStore:
         """Remove the corrupted cache file."""
         if self._cache_path.exists():
             self._cache_path.unlink()
+
+    # === Public API ===
 
     @staticmethod
     def hash_intent(intent: str) -> str:
@@ -80,6 +144,7 @@ class IntentCacheStore:
         - Entry doesn't exist
         - Entry has expired (TTL exceeded)
         - skill_ids_hash doesn't match (skills changed)
+        - Cache HMAC signature invalid (tampering detected)
         """
         cache = self._load_cache()
         entry = cache.entries.get(intent_hash)
@@ -92,12 +157,10 @@ class IntentCacheStore:
             created = datetime.fromisoformat(entry.created_at)
             age_seconds = time.time() - created.timestamp()
             if age_seconds > entry.ttl_seconds:
-                # Expired — remove entry
                 del cache.entries[intent_hash]
                 self._save_cache(cache)
                 return None
         except ValueError:
-            # Invalid timestamp — treat as expired
             del cache.entries[intent_hash]
             self._save_cache(cache)
             return None
@@ -138,4 +201,15 @@ class IntentCacheStore:
             del cache.entries[h]
 
         if to_remove:
+            self._save_cache(cache)
+
+    def invalidate_all(self) -> None:
+        """Remove all cache entries (ADV-006: index rebuild invalidates all cache).
+
+        Called from run_indexer() after any index rebuild — skill set or content
+        may have changed, making all cached match results potentially stale.
+        """
+        cache = self._load_cache()
+        if cache.entries:
+            cache.entries = {}
             self._save_cache(cache)

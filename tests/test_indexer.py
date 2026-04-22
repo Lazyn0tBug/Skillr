@@ -9,7 +9,6 @@ from pathlib import Path
 import pytest
 
 from skillr.indexer import (
-    build_index,
     get_source_tracking_value,
     load_index,
     run_indexer,
@@ -77,20 +76,6 @@ class TestScanAllSkillsDirs:
         assert skills[0].name == "skill1"
         assert str(dir1) in tracking
         assert str(dir2) in tracking
-
-
-class TestBuildIndex:
-    def test_creates_index_with_version(self, mocker):
-        mocker.patch("skillr.indexer.get_skills_dirs", return_value=[])
-        index = build_index()
-        assert index.version == "1.0.0"
-        assert index.retrieval_window == 50
-
-    def test_sets_generated_at(self, mocker):
-        mocker.patch("skillr.indexer.get_skills_dirs", return_value=[])
-        index = build_index()
-        # Should be a valid ISO timestamp
-        datetime.fromisoformat(index.generated_at)
 
 
 class TestSaveIndex:

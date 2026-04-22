@@ -248,16 +248,20 @@ class TestRouterIntegration:
     """Test record_selection_history integration in router module."""
 
     def setup_method(self):
-        """Reset router history store singleton."""
+        """Reset both router and history store singletons."""
+        import skillr.history as history_module
         import skillr.router as router_module
 
         router_module._history_store = None
+        history_module._history_store = None
 
     def teardown_method(self):
-        """Reset router history store singleton."""
+        """Reset both router and history store singletons."""
+        import skillr.history as history_module
         import skillr.router as router_module
 
         router_module._history_store = None
+        history_module._history_store = None
 
     def test_record_selection_history_via_router(self, tmp_path, mocker):
         """record_selection_history calls the store correctly."""

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from skillr.indexer import build_index, load_index, save_index, scan_all_skills_dirs
+from skillr.indexer import build_incremental_index, load_index, save_index, scan_all_skills_dirs
 from skillr.intent import build_intent_prompt, parse_intent_response
 from skillr.matcher import build_matcher_prompt, keyword_filter, parse_matcher_response
 from skillr.models import IntentSpec, MatchResult, SkillMeta, SourceTracking
@@ -31,7 +31,7 @@ class TestScannerIndexerChain:
         skills, tracking = scan_all_skills_dirs()
         assert len(skills) == 3
 
-        index = build_index()
+        index = build_incremental_index()
         assert len(index.skills) == 3
         assert index.source_tracking[str(sample_skills_dir)].type == "mtime"
 
@@ -46,7 +46,7 @@ class TestConfigScannerIndexerPipeline:
             return_value=SourceTracking(type="mtime", value="0"),
         )
 
-        index = build_index()
+        index = build_incremental_index()
         path = save_index(index)
         assert path.exists()
 

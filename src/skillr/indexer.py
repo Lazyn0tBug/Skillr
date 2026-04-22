@@ -130,21 +130,6 @@ def build_incremental_index() -> SkillrIndex:
     )
 
 
-def build_index() -> SkillrIndex:
-    """Build a fresh SkillrIndex from all configured skills_dirs."""
-    skills_dirs = [str(d) for d in get_skills_dirs()]
-    skills, source_tracking = scan_all_skills_dirs()
-
-    return SkillrIndex(
-        version="1.0.0",
-        generated_at=datetime.now(UTC).isoformat(),
-        skills_dirs=skills_dirs,
-        skills=skills,
-        source_tracking=source_tracking,
-        retrieval_window=50,
-    )
-
-
 def save_index(index: SkillrIndex) -> Path:
     """Save the SkillrIndex to ${CLAUDE_PLUGIN_DATA}/index/skillr_index.json."""
     plugin_data_dir = ensure_plugin_data_dir()
@@ -180,6 +165,19 @@ def run_indexer() -> tuple[Path, int]:
     """Run the indexer: scan skills_dirs with incremental logic, save index, rebuild vector store, return (index_path, skill_count)."""
     index = build_incremental_index()
     index_path = save_index(index)
+
+    # ADV-006: Invalidate ALL intent cache entries after index rebuild.
+    # Any index rebuild means skill set or content may have changed — all cached
+    # match results are potentially stale. invalidate_all() is correct because
+    # skill_ids_hash only tracks names (not content), and we have no cheap way
+    # to detect content-only changes. This is safe and simple.
+    from .cache import IntentCacheStore
+
+    try:
+        cache = IntentCacheStore()
+        cache.invalidate_all()
+    except Exception:
+        pass  # Non-blocking — cache invalidation failure doesn't fail the scan
 
     # Rebuild vector store from fresh scan results
     # NOTE: build_incremental_index() already produces the authoritative skill list;

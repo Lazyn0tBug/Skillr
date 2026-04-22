@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -10,6 +11,8 @@ import duckdb
 
 from .config import ensure_plugin_data_dir
 from .models import SelectionRecord
+
+logger = logging.getLogger(__name__)
 
 
 class SelectionHistoryStore:
@@ -135,9 +138,14 @@ class SelectionHistoryStore:
                     datetime.fromisoformat(record.timestamp),
                 ],
             )
-        except Exception:
-            # Non-blocking
-            pass
+        except Exception as exc:
+            # Non-blocking — log for operator diagnostics (ADV-002)
+            logger.warning(
+                "SelectionHistoryStore: failed to record selection '%s' for skill '%s': %s",
+                record.intent_hash[:8],
+                record.selected_skill,
+                exc,
+            )
 
     def get_all_records(self) -> list[SelectionRecord]:
         """Load and return all selection records, ordered by insertion order."""
@@ -211,8 +219,14 @@ class SelectionHistoryStore:
                 return None
             count = result[0]
             return count if count > 0 else None
-        except Exception:
-            # Non-blocking — return None rather than expose errors to caller
+        except Exception as exc:
+            # Non-blocking — return None; log for diagnostics (ADV-002)
+            logger.warning(
+                "SelectionHistoryStore.get_skill_selection_count(%r, %r) failed: %s",
+                skill_name,
+                days,
+                exc,
+            )
             return None
 
     def get_skill_stats(self, skill_names: list[str], days: int = 30) -> dict[str, int]:
@@ -244,7 +258,13 @@ class SelectionHistoryStore:
             for row in rows:
                 result[row[0]] = row[1]
             return result
-        except Exception:
+        except Exception as exc:
+            logger.warning(
+                "SelectionHistoryStore.get_skill_stats(%d skills, %r) failed: %s",
+                len(skill_names),
+                days,
+                exc,
+            )
             return {name: 0 for name in skill_names}
 
     def close(self) -> None:
