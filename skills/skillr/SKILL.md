@@ -41,9 +41,9 @@ Example:
    ```
    找到 4 个匹配的 Skills：
 
-   1. `/ce:plan` — 理由: 专门用于规划实现方案
-   2. `/fastapi-gen` — 理由: 生成 FastAPI 项目结构
-   3. `/auth-templates` — 理由: 提供认证模板代码
+   1. `/ce:plan` (已被选 8 次) — 理由: 专门用于规划实现方案
+   2. `/fastapi-gen` (已被选 12 次) — 理由: 生成 FastAPI 项目结构
+   3. `/auth-templates` (已被选 3 次) — 理由: 提供认证模板代码
    4. `/api-design` — 理由: 设计 API 接口规范
 
    n. 换下一批
@@ -53,8 +53,8 @@ Example:
 
    **Batch 2 (after choosing n in batch 1):**
    ```
-   5. `/drawio` — 理由: 绘制架构图
-   6. `/figma` — 理由: Figma 设计稿处理
+   5. `/drawio` (已被选 15 次) — 理由: 绘制架构图
+   6. `/figma` (已被选 4 次) — 理由: Figma 设计稿处理
    7. `/miro` — 理由: 协作白板
    8. `/readme-gen` — 理由: 生成 README 文档
 
@@ -65,8 +65,8 @@ Example:
 
    **Batch 3 (final batch — no more pagination):**
    ```
-   9. `/code-review` — 理由: 代码审查
-   10. `/test-gen` — 理由: 测试代码生成
+   9. `/code-review` (已被选 6 次) — 理由: 代码审查
+   10. `/test-gen` (已被选 2 次) — 理由: 测试代码生成
    11. `/deploy` — 理由: 部署配置
 
    n. 没有了（放弃，会话结束）

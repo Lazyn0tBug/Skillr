@@ -27,6 +27,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `indexer._skills_from_dir()` helper — matches skill's `file_path.parent.parent` to skills_dir
 - `tests/test_indexer.py::TestIncrementalIndex` — 5 tests for incremental scan, mtime change detection, and delete detection
 
+### Added (E5 Phase 1)
+- `SelectionRecord` Pydantic model in models.py — stores intent_hash, selected_skill, rejected_skills, timestamp
+- `SelectionHistoryStore` class in history.py — DuckDB-backed persistent store at `${CLAUDE_PLUGIN_DATA}/selection_history.duckdb`
+- Auto-migration from JSONL on first DuckDB init; renames JSONL to `.bak` after migration
+- `record_selection_history()` and `get_skill_selection_count()` functions in router.py
+- `tests/test_history.py` — 14 tests covering full CRUD, time-windowed queries, and router integration
+
+### Added (E5 Phase 1.5)
+- `get_skill_selection_count(skill_name, days=30)` returns count within rolling time window
+- `format_match_results_for_display()` shows "已被选 X 次（近30天）" per skill when count > 0
+- `tests/test_router.py::TestSelectionCountDisplay` — 3 tests for count display behavior
+
 ## [0.1.2] - 2026-04-21
 
 ### Added
